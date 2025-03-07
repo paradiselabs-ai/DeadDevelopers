@@ -1,5 +1,5 @@
 from fasthtml.common import *
-from app import app, rt
+from app import app, rt, User
 from dataclasses import dataclass
 
 @dataclass
@@ -17,16 +17,24 @@ SAMPLE_PROJECTS = [
 ]
 
 @rt('/dashboard')
-def get(session):
-    user = session.get('user', {})
+def get(req, session):
+    """Main dashboard view with user projects, stats, and AI assistant"""
+    # Check if user is authenticated
+    if not req.user.is_authenticated:
+        return RedirectResponse('/login', status_code=303)
+    
+    # Get user data from Django auth
+    user_data = session.get('user', {})
+    user = req.user
+    
     return Titled(
-        f"Dashboard - {user.get('name', 'Developer')}",
+        f"Dashboard - {user.get_display_name()}",
         Container(
             # Header with User Stats
             Section(
                 Grid(
                     Card(
-                        H3(f"{user.get('ai_percent', 80)}%"),
+                        H3(f"{user.ai_percentage}%"),
                         P("AI-Generated Code"),
                         cls="stat-card highlight"
                     ),
@@ -125,7 +133,11 @@ def project_card(project: Project):
     )
 
 @rt('/dashboard/new-project')
-def get(session):
+def get(req, session):
+    # Check if user is authenticated
+    if not req.user.is_authenticated:
+        return RedirectResponse('/login', status_code=303)
+        
     add_toast(session, "Starting a new AI-powered project! Let's build something amazing.", "info")
     return Card(
         H3("Create New Project"),
@@ -153,13 +165,22 @@ def get(session):
     )
 
 @rt('/dashboard/create-project')
-def post(name: str, description: str, session):
-    # TODO: Actually create the project in the database
+def post(req, name: str, description: str, session):
+    # Check if user is authenticated
+    if not req.user.is_authenticated:
+        return RedirectResponse('/login', status_code=303)
+        
+    # TODO: Actually create the project in the database and associate it with the current user
+    # In a real implementation, would save to a Project model with a ForeignKey to the User
     add_toast(session, f"Project '{name}' created! AI is ready to help you build it.", "success")
     return project_card(Project(name, description, 0, "planned"))
 
 @rt('/dashboard/ask')
-def post(query: str, session):
+def post(req, query: str, session):
+    # Check if user is authenticated
+    if not req.user.is_authenticated:
+        return RedirectResponse('/login', status_code=303)
+        
     # TODO: Implement actual AI assistant integration
     sample_response = """Based on your project structure, I recommend:
     1. Breaking down the component into smaller, reusable parts
