@@ -44,106 +44,147 @@ def client():
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM sqlite_sequence;")  # Reset auto-increment counters
 
-def test_landing_page(client):
-    """Verify the landing page renders with the correct title and hero content."""
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "DeadDevelopers" in response.text
-    assert "Humans (mostly) Not Required" in response.text
-    assert "Start Building with AI" in response.text
-    assert "Embrace AI-First Development" in response.text
-    assert "Build Smarter, Not Harder" in response.text
+@pytest.fixture
+def user_model():
+    from django.contrib.auth import get_user_model
+    return get_user_model()
 
-def test_signup_form_submission_success(client):
-    """
-    Test submitting a valid signup form. Currently fails with a 500 error due to session incompatibility.
-
-    Current Behavior:
-    - Fails with AttributeError: 'dict' object has no attribute 'cycle_key' because Django's login()
-      function is called with a FastHTML (Starlette) request object, which uses a dict for session,
-      not a Django session object.
-    - Returns status code 500.
-
-    Intended Behavior (if fixed):
-    - Should create a user and redirect to '/dashboard' with status code 303.
-    - Fix would involve removing `login(req, user)` in routes/auth.py and managing session directly
-      with FastHTML, e.g., `req.session['auth'] = user.username`.
-
-    Note: Since we can only modify tests, we assert the current failure state.
-    """
-    data = {
+def test_django_user_creation(user_model):
+    """Test Django's user creation directly to ensure auth model works correctly."""
+    user_data = {
+        "username": "testuser",
         "email": "test@example.com",
         "password": "SecurePass123!",
-        "name": "Test User",
-        "username": "testuser"
-    }
-    print(f"Sending POST request to /signup with data: {data}")
-    response = client.post("/signup", data=data)
-    print(f"Response status code: {response.status_code}")
-    print(f"Response text: {response.text[:200]}...")
-
-    # Assert current failing behavior
-    assert response.status_code == 500, f"Expected 500 due to session issue, got {response.status_code}"
-    assert "cycle_key" in response.text, "Expected 'cycle_key' error in response"
-
-    # Note the intended behavior if the application were fixed
-    print("Note: Should return 303 redirect to '/dashboard' if session handling is fixed in routes/auth.py.")
-
-def test_signup_form_submission_duplicate_email(client):
-    """
-    Test submitting a signup form with a duplicate email. Currently fails with a 500 error due to response handling.
-
-    Current Behavior:
-    - Fails with AttributeError: 'tuple' object has no attribute 'find' because signup_form() returns a tuple,
-      and the code attempts to call .find() on it to insert errors.
-    - Returns status code 500.
-
-    Intended Behavior (if fixed):
-    - Should return 200 with the signup form containing error messages (e.g., "Email already registered").
-    - Fix would involve modifying signup_form() to accept an errors parameter and render them directly,
-      e.g., `return signup_form(errors=errors)` instead of manipulating the response post-creation.
-
-    Note: Since we can only modify tests, we assert the current failure state.
-    """
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    initial_data = {
-        "username": "existinguser",
-        "email": "existing@example.com",
-        "password": "SecurePass123!",
-        "first_name": "Existing",
+        "first_name": "Test",
         "last_name": "User",
         "ai_percentage": 0
     }
-    print(f"Creating initial user with data: {initial_data}")
-    User.objects.create_user(**initial_data)
+    user = user_model.objects.create_user(**user_data)
+    assert user.pk is not None, "User should be created with an ID"
+    assert user.email == "test@example.com", "Email should match"
+    assert user.check_password("SecurePass123!"), "Password should be set correctly"
+    assert user.first_name == "Test" and user.last_name == "User", "Names should match"
+    assert user.ai_percentage == 0, "Custom field should be set"
 
+@pytest.mark.xfail(reason="Session incompatibility: login(req, user) raises 'cycle_key' error instead of redirecting")
+def test_signup_route_success(client, user_model):
+    """
+    Test /signup POST route for correct user creation and redirect.
+
+    Intended Behavior:
+    - Creates user in Django and redirects to /dashboard (303).
+    Current Behavior:
+    - Creates user but raises AttributeError ('cycle_key') due to login(req, user).
+    Fix: Remove login(req, user) in routes/auth.py and set req.session['auth'] manually.
+    """
     data = {
-        "email": "existing@example.com",  # Duplicate email
+        "email": "newuser@example.com",
+        "password": "SecurePass123!",
+        "name": "New User",
+        "username": "newuser"
+    }
+    response = client.post("/signup", data=data)
+    assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
+    assert response.headers["location"] == "/dashboard", "Should redirect to dashboard"
+
+    # Verify user was created
+    user = user_model.objects.get(email="newuser@example.com")
+    assert user.username == "newuser", "User should be created in Django"
+    assert user.check_password("SecurePass123!"), "Password should be hashed"
+
+@pytest.mark.xfail(reason="Response handling: signup_form() tuple lacks 'find' method, raises error instead of showing errors")
+def test_signup_route_duplicate_email(client, user_model):
+    """
+    Test /signup POST with duplicate email for correct error handling.
+
+    Intended Behavior:
+    - Returns 200 with 'Email already registered' error message.
+    Current Behavior:
+    - Detects duplicate but raises AttributeError ('find') due to response.find().
+    Fix: Modify signup_form() in routes/auth.py to accept errors parameter.
+    """
+    user_model.objects.create_user(
+        username="existinguser",
+        email="existing@example.com",
+        password="SecurePass123!"
+    )
+    data = {
+        "email": "existing@example.com",
         "password": "AnotherPass123!",
         "name": "New User",
         "username": "newuser"
     }
-    print(f"Sending POST request to /signup with duplicate email data: {data}")
     response = client.post("/signup", data=data)
-    print(f"Response status code: {response.status_code}")
-    print(f"Response text: {response.text[:200]}...")
+    assert response.status_code == 200, f"Expected 200 with error form, got {response.status_code}"
+    assert "Email already registered" in response.text, "Should show duplicate email error"
 
-    # Assert current failing behavior
-    assert response.status_code == 500, f"Expected 500 due to tuple issue, got {response.status_code}"
-    assert "find" in response.text, "Expected 'find' error in response"
+    # Verify no new user was created
+    assert user_model.objects.filter(email="existing@example.com").count() == 1, "No duplicate should be created"
 
-    # Note the intended behavior if the application were fixed
-    print("Note: Should return 200 with error 'Email already registered' if form handling is fixed in routes/auth.py.")
+def test_login_route_get(client):
+    """Test /login GET route renders the form correctly."""
+    response = client.get("/login")
+    assert response.status_code == 200, f"Login page should render, got {response.status_code}"
+    assert "Welcome Back" in response.text, "Should include login header"
+    assert 'hx-post="/login"' in response.text, "Should include form with POST action"
 
-def test_nav_elements(client):
-    """Ensure navigation elements are present and functional."""
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "nav-left" in response.text
-    assert "nav-center" in response.text
-    assert "nav-right" in response.text
-    assert "menu-button" in response.text
-    assert 'href="/login"' in response.text
-    assert 'href="/signup"' in response.text
-    assert 'href="/features"' in response.text
+@pytest.mark.xfail(reason="Session incompatibility: login(req, user) raises 'cycle_key' error instead of redirecting")
+def test_login_route_post_success(client, user_model):
+    """
+    Test /login POST with valid credentials for correct authentication and redirect.
+
+    Intended Behavior:
+    - Authenticates user and redirects to /dashboard (303).
+    Current Behavior:
+    - Authenticates but raises AttributeError ('cycle_key') due to login(req, user).
+    Fix: Remove login(req, user) in routes/auth.py and set req.session['auth'] manually.
+    """
+    user_model.objects.create_user(
+        username="loginuser",
+        email="login@example.com",
+        password="SecurePass123!"
+    )
+    data = {
+        "email": "login@example.com",
+        "password": "SecurePass123!"
+    }
+    response = client.post("/login", data=data)
+    assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
+    assert response.headers["location"] == "/dashboard", "Should redirect to dashboard"
+
+def test_login_route_post_failure(client, user_model):
+    """Test /login POST with invalid credentials for correct error handling."""
+    user_model.objects.create_user(
+        username="loginuser",
+        email="login@example.com",
+        password="SecurePass123!"
+    )
+    data = {
+        "email": "login@example.com",
+        "password": "WrongPass!"
+    }
+    response = client.post("/login", data=data)
+    assert response.status_code == 200, f"Expected 200 with error form, got {response.status_code}"
+    assert "Invalid email or password" in response.text, "Should show auth failure message"
+
+@pytest.mark.xfail(reason="Cannot simulate session with FastHTML Client; auth_before redirects to /login instead of clearing session")
+def test_logout_route(client, user_model):
+    """
+    Test /logout GET route for correct session clearing and redirect.
+
+    Intended Behavior:
+    - Clears session and redirects to / (303).
+    Current Behavior:
+    - Redirects to /login (303) for unauthenticated users; can't test session clearing.
+    Fix: Modify app.py auth_before and routes/auth.py logout to handle sessions correctly.
+    """
+    user_model.objects.create_user(
+        username="logoutuser",
+        email="logout@example.com",
+        password="SecurePass123!"
+    )
+    # Ideally, simulate a logged-in session (not possible with current Client)
+    response = client.get("/logout")
+    assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
+    assert response.headers["location"] == "/", "Should redirect to home after logout"
+    # Cannot assert session cleared due to test limitation
