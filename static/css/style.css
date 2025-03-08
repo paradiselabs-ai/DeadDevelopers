@@ -1399,3 +1399,209 @@ body {
 .menu-button:hover {
     transform: scale(1.1);
 }
+
+/* Terminal-themed Authentication Components */
+.terminal-card {
+    background: var(--terminal);
+    border: 1px solid var(--acid);
+    border-radius: 4px;
+    padding: 2.5rem;
+    position: relative;
+    max-width: 550px;
+    margin: 8rem auto 0;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.terminal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--acid);
+}
+
+.terminal-card::after {
+    content: '● ● ●';
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem;
+    color: var(--smoke);
+    font-size: 0.8rem;
+    letter-spacing: 0.5rem;
+}
+
+.terminal-header {
+    color: var(--acid);
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    display: inline-block;
+}
+
+.terminal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.terminal-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 255, 102, 0.3);
+    border-radius: 4px;
+    color: var(--light);
+    font-family: var(--font-mono);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.terminal-input:focus {
+    outline: none;
+    border-color: var(--acid);
+    box-shadow: 0 0 0 2px rgba(0, 255, 102, 0.2);
+}
+
+.terminal-input::placeholder {
+    color: var(--ash);
+    opacity: 0.7;
+}
+
+.terminal-button {
+    background: transparent;
+    color: var(--acid);
+    border: 1px solid var(--acid);
+    padding: 0.8rem 1.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--font-mono);
+    position: relative;
+    overflow: hidden;
+}
+
+.terminal-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: var(--acid);
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.terminal-button:hover {
+    color: var(--terminal);
+}
+
+.terminal-button:hover::before {
+    width: 100%;
+}
+
+.terminal-button.secondary {
+    border-color: var(--ash);
+    color: var(--ash);
+}
+
+.terminal-button.secondary::before {
+    background: var(--ash);
+}
+
+.terminal-text {
+    color: var(--light);
+    font-family: var(--font-mono);
+    opacity: 0.8;
+}
+
+.terminal-link {
+    color: var(--voltage);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.terminal-link:hover {
+    color: var(--acid);
+    text-decoration: underline;
+}
+
+.form-errors {
+    margin-top: 0.5rem;
+}
+
+.error-message {
+    background: rgba(220, 53, 69, 0.2);
+    border-left: 3px solid #dc3545;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 4px 4px 0;
+}
+
+.error-text {
+    color: #ff6b6b;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex-grow: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.divider-text {
+    padding: 0 1rem;
+    color: var(--ash);
+    font-size: 0.9rem;
+}
+
+.oauth-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.oauth-button.github {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.oauth-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.oauth-link {
+    text-decoration: none;
+    display: block;
+}
+
+.oauth-text {
+    color: var(--light);
+    font-size: 1rem;
+    font-weight: 600;
+}
