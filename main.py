@@ -12,6 +12,7 @@ def get():
     return Titled(
         "DeadDevelopers",
         Container(
+            # Header/Navigation
             Header(
                 Nav(
                     Div(
@@ -24,15 +25,7 @@ def get():
                             href="/",
                             cls="brand-logo"
                         ),
-                        Button(
-                            "☰",
-                            cls="menu-button",
-                            aria_expanded="false",
-                            aria_label="Toggle navigation menu",
-                            hx_get="/nav-toggle",
-                            hx_target=".main-nav",
-                            hx_swap="outerHTML"
-                        ),
+                        Button("☰", cls="menu-button", aria_expanded="false", aria_label="Toggle navigation menu"),
                         cls="nav-left"
                     ),
                     Div(
@@ -442,45 +435,5 @@ def get():
         )
     )
 
-# Navigation toggle route
-@rt('/nav-toggle')
-def get():
-    return Nav(
-        Div(
-            A(
-                Div(
-                    Img(src="/img/logo.png", cls="nav-logo"),
-                    Span("DEADDEVELOPERS", cls="nav-text"),
-                    cls="nav-logo-container"
-                ),
-                href="/",
-                cls="brand-logo"
-            ),
-            Button(
-                "☰",
-                cls="menu-button",
-                aria_expanded="true",
-                aria_label="Toggle navigation menu",
-                hx_get="/nav-toggle",
-                hx_target=".main-nav",
-                hx_swap="outerHTML"
-            ),
-            cls="nav-left"
-        ),
-        Div(
-            A("/Features", href="#features"),
-            A("/Community", href="/community"),
-            A("/Blog", href="/blog"),
-            A("/About", href="/about"),
-            cls="nav-center"
-        ),
-        Div(
-            A("Log in", href="/login", cls="nav-login"),
-            A("Sign up", href="/signup", cls="nav-signup"),
-            cls="nav-right"
-        ),
-        cls="main-nav active"
-    )
-
-if __name__ == "__main__":
-    serve()
+# Run the server
+serve()
