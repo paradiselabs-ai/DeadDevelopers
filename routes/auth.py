@@ -16,7 +16,7 @@ class SignupForm:
 def signup_form():
     """Terminal-styled signup form with the project's aesthetic"""
     return Card(
-        A("ESC ← Wait Go Back - Let me look at more things that would strengthen my desire to join DeadDevelopers", 
+        A("ESC ← Let me look at more things that would make me want to join", 
             href="/",
             cls="back-link terminal-link",
             style="display: block; margin-bottom: 15px;"
@@ -56,8 +56,15 @@ def signup_form():
                 cls="form-errors terminal-errors"
             ),
             P(
-                "By signing up, you acknowledge that AI will write most of your code, " 
-                "and you're totally fine with that.",
+                "By signing up, you acknowledge that you are signing up.",
+                cls="signup-disclaimer terminal-text"
+            ),
+            P(
+                "THERE WILL BE NO ESCAPE... ",
+                cls="signup-disclaimer terminal-text"
+            ),
+            P(
+                "(unless you delete your account)",
                 cls="signup-disclaimer terminal-text"
             ),
             Button(
