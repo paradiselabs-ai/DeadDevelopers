@@ -25,8 +25,29 @@ login_redir = RedirectResponse('/login', status_code=303)
 
 def auth_before(req, sess):
     """Beforeware to handle authentication"""
+    # Set auth in request scope from session
     auth = req.scope['auth'] = sess.get('auth', None)
-    if not auth: return login_redir
+    
+    # If auth is present in session, ensure user data is also available
+    if auth:
+        # Ensure user data is in session
+        if 'user' not in sess:
+            try:
+                # Try to get user from Django
+                user = User.objects.get(username=auth)
+                sess['user'] = {
+                    'name': user.get_display_name(),
+                    'email': user.email,
+                    'ai_percentage': user.ai_percentage
+                }
+            except User.DoesNotExist:
+                # If user doesn't exist, clear auth
+                del sess['auth']
+                return login_redir
+        return None
+    
+    # No auth in session, redirect to login
+    return login_redir
 
 # Initialize FastHTML app with WebSocket support
 app, rt = fast_app(

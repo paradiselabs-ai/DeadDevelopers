@@ -19,22 +19,24 @@ SAMPLE_PROJECTS = [
 @rt('/dashboard')
 def get(req, session):
     """Main dashboard view with user projects, stats, and AI assistant"""
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    # Check if user is authenticated via FastHTML session
+    auth = req.scope.get('auth')
+    if not auth:
         return RedirectResponse('/login', status_code=303)
     
-    # Get user data from Django auth
+    # Get user data from session
     user_data = session.get('user', {})
-    user = req.user
+    username = user_data.get('name', auth)
+    ai_percentage = user_data.get('ai_percentage', 0)
     
     return Titled(
-        f"Dashboard - {user.get_display_name()}",
+        f"Dashboard - {username}",
         Container(
             # Header with User Stats
             Section(
                 Grid(
                     Card(
-                        H3(f"{user.ai_percentage}%"),
+                        H3(f"{ai_percentage}%"),
                         P("AI-Generated Code"),
                         cls="stat-card highlight"
                     ),
@@ -134,8 +136,9 @@ def project_card(project: Project):
 
 @rt('/dashboard/new-project')
 def get(req, session):
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    # Check if user is authenticated via FastHTML session
+    auth = req.scope.get('auth')
+    if not auth:
         return RedirectResponse('/login', status_code=303)
         
     add_toast(session, "Starting a new AI-powered project! Let's build something amazing.", "info")
@@ -166,8 +169,9 @@ def get(req, session):
 
 @rt('/dashboard/create-project')
 def post(req, name: str, description: str, session):
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    # Check if user is authenticated via FastHTML session
+    auth = req.scope.get('auth')
+    if not auth:
         return RedirectResponse('/login', status_code=303)
         
     # TODO: Actually create the project in the database and associate it with the current user
@@ -177,8 +181,9 @@ def post(req, name: str, description: str, session):
 
 @rt('/dashboard/ask')
 def post(req, query: str, session):
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    # Check if user is authenticated via FastHTML session
+    auth = req.scope.get('auth')
+    if not auth:
         return RedirectResponse('/login', status_code=303)
         
     # TODO: Implement actual AI assistant integration

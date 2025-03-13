@@ -13,7 +13,8 @@ class SignupForm:
     password: str
     name: str
     username: str = None
-def signup_form():
+
+def signup_form(errors=None):
     """Terminal-styled signup form with the project's aesthetic"""
     return Card(
         A("ESC ← Let me look at more things that would make me want to join", 
@@ -52,6 +53,7 @@ def signup_form():
                 cls="signup-input terminal-input"
             ),
             Div(
+                errors if errors else "",
                 id="signup-errors",
                 cls="form-errors terminal-errors"
             ),
@@ -82,7 +84,7 @@ def signup_form():
             cls="signup-link-text terminal-text"
         ),
         cls="signup-card terminal-card"
-    ),
+    )
 
 def error_message(error_text):
     """Format error message with terminal style"""
@@ -128,9 +130,7 @@ def post(form: SignupForm, req):
     
     # Return form with errors if validation failed
     if errors:
-        response = signup_form()
-        # Insert errors at the designated error container
-        response.find("#signup-errors").content = errors
+        response = signup_form(errors)
         return response
     
     # Split name into first and last name
@@ -148,10 +148,7 @@ def post(form: SignupForm, req):
         ai_percentage=0
     )
     
-    # Log the user in
-    login(req, user)
-    
-    # Set session data for FastHTML access
+    # Set session data for FastHTML access instead of using Django login
     req.session['auth'] = user.username
     req.session['user'] = {
         'name': user.get_display_name(),
@@ -167,6 +164,8 @@ def post(form: SignupForm, req):
 
 def login_form(error=None):
     """Terminal-styled login form"""
+    error_content = error_message(error) if error else ""
+    
     form = Form(
         Input(
             type="email",
@@ -184,7 +183,7 @@ def login_form(error=None):
         ),
         # Error container
         Div(
-            error_message(error) if error else "",
+            error_content,
             id="login-errors",
             cls="form-errors terminal-errors"
         ),
@@ -236,56 +235,53 @@ def get():
 
 @rt('/login')
 def post(email: str, password: str, req):
-    """Authenticate user against Django's auth system"""
-    # Authenticate with Django
+    """Handle login form submission and authenticate Django user"""
+    # Attempt to authenticate user
     user = authenticate(username=email, password=password)
     
-    # Handle email-based authentication as fallback
-    if user is None:
-        try:
-            user_obj = User.objects.get(email=email)
-            user = authenticate(username=user_obj.username, password=password)
-        except User.DoesNotExist:
-            user = None
+    # If authentication fails, return login form with error
+    if not user:
+        return Card(
+            A("← Back to home", href="/", cls="back-link terminal-link"),
+            H2("Welcome Back", cls="terminal-header"),
+            login_form("Invalid email or password"),
+            cls="login-card terminal-card"
+        )
     
-    if user is not None:
-        # Login with Django
-        login(req, user)
-        
-        # Set session data for FastHTML access
-        req.session['auth'] = user.username
-        req.session['user'] = {
-            'name': user.get_display_name(),
-            'email': user.email,
-            'ai_percentage': user.ai_percentage
-        }
-        
-        # Add welcome toast
-        add_toast(req.session, "Welcome back! Your AI assistant is ready to code.", "success")
-        
-        # Redirect to dashboard
-        return RedirectResponse('/dashboard', status_code=303)
-    else:
-        # Return login form with error
-        return login_form(error="Invalid email or password. Please try again.")
+    # Set session data for FastHTML access instead of using Django login
+    req.session['auth'] = user.username
+    req.session['user'] = {
+        'name': user.get_display_name(),
+        'email': user.email,
+        'ai_percentage': user.ai_percentage
+    }
+    
+    # Add welcome back toast
+    add_toast(req.session, f"Welcome back, {user.get_display_name()}!", "success")
+    
+    # Redirect to dashboard
+    return RedirectResponse('/dashboard', status_code=303)
 
 @rt('/logout')
 def get(req):
     """Log user out of both Django and FastHTML sessions"""
-    # Log out from Django
-    if req.user.is_authenticated:
-        logout(req)
-    
-    # Clear FastHTML session data
+    # Clear FastHTML session first
     if 'auth' in req.session:
         del req.session['auth']
     if 'user' in req.session:
         del req.session['user']
     
-    # Add logout message
-    add_toast(req.session, "See you soon! Your AI will miss you.", "info")
+    # Clear Django session if available
+    try:
+        logout(req)
+    except Exception:
+        # Ignore Django session errors in FastHTML context
+        pass
     
-    # Redirect to home
+    # Add logout toast
+    add_toast(req.session, "You've been logged out successfully.", "info")
+    
+    # Redirect to home page with explicit 303 status code
     return RedirectResponse('/', status_code=303)
 
 @rt('/profile')
