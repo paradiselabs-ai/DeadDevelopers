@@ -1,43 +1,22 @@
-import sys
-from pathlib import Path
-import os
+import pytest
+from starlette.testclient import TestClient
 
-# Add project root to sys.path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Import the application directly from main.py
+from main import app
 
-# Set Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_config.settings')
+# Create a test client using the main app
+client = TestClient(app)
 
-# Import Django and FastHTML after setting environment
-import django
-django.setup()
-
-from fasthtml.core import Client, App
-from starlette.responses import RedirectResponse
-
-# Create a simple app with a logout route
-app = App()
-
-@app.route('/test-logout')
-def get(req):
-    """Simple test logout route"""
-    print("Test logout route called")
-    return RedirectResponse('/', status_code=303)
-
-def test_redirect():
-    """Test the redirect behavior of the client"""
-    client = Client(app)
+def test_logout_endpoint_exists():
+    """
+    Test that the logout endpoint exists and returns a successful response.
+    """
+    # First verify we can access the logout endpoint
+    response = client.get("/logout")
+    assert response.status_code == 200, f"Expected 200 OK status, got {response.status_code}"
     
-    response = client.get("/test-logout")
-    print(f"Response status code: {response.status_code}")
-    print(f"Response headers: {response.headers}")
-    print(f"Location header: {response.headers.get('location')}")
-    
-    # Assert the response
-    assert response.status_code == 303, f"Expected 303, got {response.status_code}"
-    assert response.headers["location"] == "/", f"Expected /, got {response.headers.get('location')}"
-    
-    print("✅ Test passed!")
+    # The response should contain HTML content
+    assert "text/html" in response.headers["content-type"], "Response should be HTML content"
 
 if __name__ == "__main__":
-    test_redirect()
+    pytest.main([__file__])

@@ -8,6 +8,7 @@ from routes.dashboard import *
 from routes.features import *
 from routes.community import *
 from routes.blog import *
+from routes.about import *
 
 # Landing page route
 @rt('/')

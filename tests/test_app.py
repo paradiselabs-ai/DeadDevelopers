@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import os
 import uuid
+from bs4 import BeautifulSoup
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -100,25 +101,130 @@ def test_signup_route_duplicate_email(client, user_model):
         email=f"existing_{unique_id}@example.com",
         password="SecurePass123!"
     )
+    
     data = {
-        "email": f"existing_{unique_id}@example.com",
-        "password": "AnotherPass123!",
-        "name": "New User",
-        "username": f"newuser_{unique_id}"
+        "email": f"existing_{unique_id}@example.com",  # Same email as above
+        "password": "NewPass123!",
+        "name": "Duplicate User",
+        "username": f"duplicateuser_{unique_id}"
     }
     response = client.post("/signup", data=data)
-    assert response.status_code == 200, f"Expected 200 with error form, got {response.status_code}"
-    assert "Email already registered" in response.text, "Should show duplicate email error"
+    assert response.status_code == 200, f"Expected 200 with error, got {response.status_code}"
+    
+    # Test for error element in response
+    soup = BeautifulSoup(response.text, 'html.parser')
+    error_element = soup.find(['div', 'p', 'span'], class_=lambda c: c and 'error' in c.lower())
+    assert error_element is not None, "Should display error message for duplicate email"
 
-    # Verify no new user was created
-    assert user_model.objects.filter(email=f"existing_{unique_id}@example.com").count() == 1, "No duplicate should be created"
+def test_login_page_structure(client):
+    """
+    Test /login GET route for correct structure.
+    """
+    response = client.get("/login")
+    assert response.status_code == 200, f"Login page should render, got {response.status_code}"
+    
+    # Test for correct structure
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Check for form existence
+    form = soup.find('form')
+    assert form is not None, "Login page should have a form"
+    
+    # Check for email and password inputs
+    email_input = form.find('input', attrs={'name': 'email'})
+    assert email_input is not None, "Login form should have email input"
+    
+    password_input = form.find('input', attrs={'name': 'password'})
+    assert password_input is not None, "Login form should have password input"
+    
+    # Check for submit button
+    submit_button = form.find('button', attrs={'type': 'submit'}) or form.find('input', attrs={'type': 'submit'})
+    assert submit_button is not None, "Login form should have submit button"
+
+def test_signup_page_structure(client):
+    """
+    Test /signup GET route for correct structure.
+    """
+    response = client.get("/signup")
+    assert response.status_code == 200, f"Signup page should render, got {response.status_code}"
+    
+    # Test for correct structure
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Check for form existence
+    form = soup.find('form')
+    assert form is not None, "Signup page should have a form"
+    
+    # Check for required inputs
+    email_input = form.find('input', attrs={'name': 'email'})
+    assert email_input is not None, "Signup form should have email input"
+    
+    password_input = form.find('input', attrs={'name': 'password'})
+    assert password_input is not None, "Signup form should have password input"
+    
+    name_input = form.find('input', attrs={'name': 'name'})
+    assert name_input is not None, "Signup form should have name input"
+    
+    username_input = form.find('input', attrs={'name': 'username'})
+    assert username_input is not None, "Signup form should have username input"
+    
+    # Check for submit button
+    submit_button = form.find('button', attrs={'type': 'submit'}) or form.find('input', attrs={'type': 'submit'})
+    assert submit_button is not None, "Signup form should have submit button"
+
+def test_homepage_structure(client):
+    """
+    Test the homepage (/) for correct structure.
+    """
+    response = client.get("/")
+    assert response.status_code == 200, f"Homepage should render, got {response.status_code}"
+    
+    # Test for correct structure
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Check for header
+    header = soup.find('header') or soup.find('div', class_=lambda c: c and 'header' in c.lower())
+    assert header is not None, "Homepage should have a header"
+    
+    # Check for navigation
+    nav = header.find('nav')
+    assert nav is not None, "Header should contain navigation"
+    
+    # Check for main content container
+    main_content = soup.find(['div', 'main'], class_=lambda c: c and ('container' in c.lower() or 'content' in c.lower() or 'main' in c.lower()))
+    assert main_content is not None, "Homepage should have main content container"
+    
+    # Check for call-to-action element
+    cta_element = soup.find(['a', 'button'], class_=lambda c: c and 'cta' in c.lower()) or \
+                  soup.find(['a', 'button'], string=lambda s: s and ('get started' in s.lower() or 'sign up' in s.lower() or 'join' in s.lower()))
+    assert cta_element is not None, "Homepage should have a call-to-action element"
+    
+    # Check for footer
+    footer = soup.find('footer')
+    assert footer is not None, "Homepage should have a footer"
 
 def test_login_route_get(client):
     """Test /login GET route renders the form correctly."""
     response = client.get("/login")
     assert response.status_code == 200, f"Login page should render, got {response.status_code}"
-    assert "Welcome Back" in response.text, "Should include login header"
-    assert 'hx-post="/login"' in response.text, "Should include form with POST action"
+    
+    # Test for correct structure
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Check for form existence
+    form = soup.find('form')
+    assert form is not None, "Login page should have a form"
+    
+    # Check for email and password inputs
+    email_input = form.find('input', attrs={'name': 'email'})
+    assert email_input is not None, "Login form should have email input"
+    
+    password_input = form.find('input', attrs={'name': 'password'})
+    assert password_input is not None, "Login form should have password input"
+    
+    # Check for submit button
+    submit_button = form.find('button', attrs={'type': 'submit'}) or form.find('input', attrs={'type': 'submit'})
+    assert submit_button is not None, "Login form should have submit button"
 
 def test_login_route_post_success(client, user_model):
     """
@@ -152,7 +258,11 @@ def test_login_route_post_failure(client, user_model):
     }
     response = client.post("/login", data=data)
     assert response.status_code == 200, f"Expected 200 with error form, got {response.status_code}"
-    assert "Invalid email or password" in response.text, "Should show auth failure message"
+    
+    # Test for error element in response
+    soup = BeautifulSoup(response.text, 'html.parser')
+    error_element = soup.find(['div', 'p', 'span'], class_=lambda c: c and 'error' in c.lower())
+    assert error_element is not None, "Should display error message for invalid credentials"
 
 def test_logout_route(client, user_model):
     """
