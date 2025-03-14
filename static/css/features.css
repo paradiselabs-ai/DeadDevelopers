@@ -1,0 +1,132 @@
+/* Features Page Styling */
+
+/* Core styling */
+:root {
+    --main-bg: #404040;
+    --feature-card-bg: #121212;
+    --feature-card-border: #00ff66;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --accent-color: #00ff66;
+}
+
+body {
+    background-color: var(--main-bg);
+    margin: 0;
+    padding: 0;
+    color: var(--text-primary);
+}
+
+
+/* Main content container */
+.content-container {
+    max-width: 1200px;
+    margin: 2rem auto 4rem;
+    padding: 0 2rem;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin: 2rem 0 3rem;
+}
+
+/* Features grid layout */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+/* Feature card styling */
+.feature-card {
+    background: var(--feature-card-bg);
+    border: 1px solid var(--feature-card-border);
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.feature-title {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin: 1rem 0;
+}
+
+.feature-card p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.feature-icon {
+    font-size: 1.8rem;
+    color: var(--accent-color);
+}
+
+/* Button styling */
+.learn-more-btn {
+    display: inline-block;
+    background: transparent;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.learn-more-btn:hover {
+    background: var(--accent-color);
+    color: #000000;
+}
+
+/* CTA section */
+.cta-section {
+    text-align: center;
+    margin-top: 4rem;
+    padding: 2rem 0;
+}
+
+.cta-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.cta-button {
+    display: inline-block;
+    background: var(--accent-color);
+    color: #000000;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-top: 1.5rem;
+    transition: all 0.2s;
+}
+
+.cta-button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+
+/* Responsive styling */
+@media (max-width: 768px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+    
+    .nav-right {
+        gap: 1rem;
+    }
+}
