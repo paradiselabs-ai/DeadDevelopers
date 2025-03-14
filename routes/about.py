@@ -41,11 +41,11 @@ def get(req):
     return Titled(
         "",
         Div(
-            # Add page CSS
+            # Updated Style
             Style("""
                 /* Base styles and variables */
                 :root {
-                  --color-background: #1a1a1a;
+                  --color-background: #1A1B1A;
                   --color-card: #2a2a2a;
                   --color-accent: #00ff66;
                   --color-text: #ffffff;
@@ -70,12 +70,15 @@ def get(req):
                   line-height: 1.6;
                   -webkit-font-smoothing: antialiased;
                   -moz-osx-font-smoothing: grayscale;
+                  overflow-x: hidden;
                 }
                 
                 /* Container */
                 .landing-container {
                   min-height: 100vh;
                   padding: calc(var(--spacing-unit) * 2);
+                  position: relative;
+                  overflow-x: hidden;
                 }
                 
                 /* Animated content */
@@ -98,19 +101,40 @@ def get(req):
                   flex-direction: column;
                   gap: calc(var(--spacing-unit) * 4);
                   margin-top: 3rem;
+                  position: relative;
+                  z-index: 1;
+                }
+                
+                /* Background overlay for hero-text to cta-button */
+                .main-content::before {
+                  content: "";
+                  position: absolute;
+                  top: calc(var(--spacing-unit) * 12);
+                  left: calc(-1 * var(--spacing-unit) * 2);
+                  right: calc(-1 * var(--spacing-unit) * 2);
+                  bottom: calc(var(--spacing-unit) * -3);
+                  background-size: 200% 200%;
+                  animation: gradientShift 10s ease-in-out infinite;
+                  backdrop-filter: blur(4px);
+                  border: 1px solid rgba(255, 255, 255, 0.08);
+                  border-radius: 12px;
+                  box-shadow: 
+                    0 8px 20px rgba(0, 0, 0, 0.3),
+                    0 0 20px rgba(0, 255, 102, 0.1);
+                  z-index: -2;
                 }
                 
                 /* Hero section */
                 .hero-section {
                   text-align: left;
-                  margin-top: calc(var(--spacing-unit) * 4);
+                  margin-top: calc(var(--spacing-unit) * 2);
                 }
                 
                 .main-title {
                   font-size: clamp(2rem, 5vw, 3.5rem);
                   font-weight: 700;
                   line-height: 1.2;
-                  margin-bottom: calc(var(--spacing-unit) * 2);
+                  margin-bottom: 2rem;
                   position: relative;
                   display: inline-block;
                 }
@@ -131,7 +155,10 @@ def get(req):
                   font-size: clamp(1rem, 2vw, 1.25rem);
                   color: var(--color-text-secondary);
                   max-width: 800px;
-                  margin-top: calc(var(--spacing-unit) * 2);
+                  margin-top: 8rem;
+                  margin-bottom: -4rem;
+                  position: relative;
+                  z-index: 1;
                 }
                 
                 /* Technologies section */
@@ -139,7 +166,8 @@ def get(req):
                   display: grid;
                   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
                   gap: var(--spacing-unit);
-                  margin-top: calc(var(--spacing-unit) * 2);
+                  position: relative;
+                  z-index: 1;
                 }
                 
                 .technology-card {
@@ -194,7 +222,10 @@ def get(req):
                 /* CTA section */
                 .cta-section {
                   text-align: center;
-                  margin: calc(var(--spacing-unit) * 2) 0;
+                  margin: calc(var(--spacing-unit) * 3) 0;
+                  margin-top: -5rem;
+                  position: relative;
+                  z-index: 1;
                 }
                 
                 .cta-button {
@@ -234,67 +265,63 @@ def get(req):
                   height: 300%;
                 }
                 
+                /* Footer */
+                .main-footer {
+                  position: relative;
+                  z-index: 0;
+                }
+                
                 /* Animations */
                 @keyframes underlineExpand {
-                  from {
-                    transform: scaleX(0);
-                  }
-                  to {
-                    transform: scaleX(1);
-                  }
+                  from { transform: scaleX(0); }
+                  to { transform: scaleX(1); }
                 }
                 
                 @keyframes fadeInUp {
-                  from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                  }
-                  to {
-                    opacity: 1;
-                    transform: translateY(0);
-                  }
+                  from { opacity: 0; transform: translateY(20px); }
+                  to { opacity: 1; transform: translateY(0); }
                 }
                 
                 @keyframes pulse {
-                  0% {
-                    transform: translate(-50%, -50%) scale(1);
-                    opacity: 0.2;
-                  }
-                  50% {
-                    transform: translate(-50%, -50%) scale(1.5);
-                    opacity: 0.1;
-                  }
-                  100% {
-                    transform: translate(-50%, -50%) scale(1);
-                    opacity: 0.2;
-                  }
+                  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+                  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.1; }
+                  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+                }
+                
+                @keyframes gradientShift {
+                  0% { background-position: 0% 0%; }
+                  50% { background-position: 100% 100%; }
+                  100% { background-position: 0% 0%; }
                 }
                 
                 /* Responsive Design */
                 @media (max-width: 768px) {
-                  .landing-container {
-                    padding: var(--spacing-unit);
+                  .landing-container { padding: var(--spacing-unit); }
+                  .hero-section { margin-top: calc(var(--spacing-unit) * 2); }
+                  .technologies-grid { grid-template-columns: 1fr; }
+                  .main-content::before, .main-content::after { 
+                    top: calc(var(--spacing-unit) * 16); 
+                    left: calc(-1 * var(--spacing-unit));
+                    right: calc(-1 * var(--spacing-unit));
                   }
-                
-                  .hero-section {
-                    margin-top: calc(var(--spacing-unit) * 2);
-                  }
-                
-                  .technologies-grid {
-                    grid-template-columns: 1fr;
-                  }
+                  .cta-section {
+                  text-align: center;
+                  margin: calc(var(--spacing-unit) * 3) 0;
+                  margin-top: -3rem;
+                  position: relative;
+                  z-index: 1;
+                }
+
                 }
                 
                 /* Accessibility */
                 @media (prefers-reduced-motion: reduce) {
-                  .animated-content,
-                  .technology-card,
-                  .title-underline,
-                  .tech-indicator::after,
-                  .cta-button::before {
+                  .animated-content, .technology-card, .title-underline, 
+                  .tech-indicator::after, .cta-button::before, .main-content::before {
                     animation: none;
                     transition: none;
                   }
+                  .main-content::before { backdrop-filter: none; }
                 }
                 
                 /* Focus States */
@@ -305,23 +332,13 @@ def get(req):
                 
                 /* Print styles */
                 @media print {
-                  .landing-container {
-                    background: white;
-                    color: black;
-                  }
-                
-                  .technology-card {
-                    border: 1px solid #ccc;
-                    break-inside: avoid;
-                  }
-                
-                  .cta-button {
-                    display: none;
-                  }
+                  .landing-container { background: white; color: black; }
+                  .technology-card { border: 1px solid #ccc; break-inside: avoid; }
+                  .cta-button { display: none; }
+                  .main-content::before, .main-content::after { display: none; }
                 }
             """),
             
-            # Add script to handle animation on page load
             Script("""
                 document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(function() {
@@ -330,7 +347,6 @@ def get(req):
                 });
             """),
             
-            # Site Header/Navigation (same as blog.py)
             Header(
                 Nav(
                     Div(
@@ -363,11 +379,8 @@ def get(req):
                 cls="site-header"
             ),
             
-            # Animated content
             Div(
-                # Main content
                 Div(
-                    # Hero section
                     Section(
                         H1(
                             "Welcome to the Post-Human Coding Collective",
@@ -382,8 +395,6 @@ def get(req):
                         ),
                         cls="hero-section"
                     ),
-                    
-                    # Technologies section
                     Section(
                         Div(
                             *tech_cards,
@@ -391,8 +402,6 @@ def get(req):
                         ),
                         cls="technologies-section"
                     ),
-                    
-                    # CTA section
                     Section(
                         Button(
                             "Join Us in the Digital Afterlife",
@@ -406,7 +415,6 @@ def get(req):
                 cls="animated-content"
             ),
             
-            # Footer
             Footer(
                 Div(
                     Div(
