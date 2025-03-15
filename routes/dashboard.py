@@ -1,6 +1,7 @@
 from fasthtml.common import *
 from app import app, rt, User
 from dataclasses import dataclass
+from routes.header import SiteHeader
 
 @dataclass
 class Project:
@@ -19,6 +20,9 @@ SAMPLE_PROJECTS = [
 @rt('/dashboard')
 def get(req, session):
     """Main dashboard view with user projects, stats, and AI assistant"""
+    # Store current path in session for active link highlighting
+    session['path'] = '/dashboard'
+    
     # Check if user is authenticated via FastHTML session
     auth = req.scope.get('auth')
     if not auth:
@@ -32,6 +36,9 @@ def get(req, session):
     return Titled(
         f"Dashboard - {username}",
         Container(
+            # Include header component
+            SiteHeader(session),
+            
             # Header with User Stats
             Section(
                 Grid(

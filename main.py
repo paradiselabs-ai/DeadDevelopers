@@ -9,106 +9,19 @@ from routes.features import *
 from routes.community import *
 from routes.blog import *
 from routes.about import *
+from routes.header import SiteHeader
 
 # Landing page route
 @rt('/')
-def get():
+def get(session):
+    # Store current path in session for active link highlighting
+    session['path'] = '/'
+    
     return Titled(
-        "DeadDevelopers",
+        "",
         Container(
             # Header/Navigation
-            Header(
-                Nav(
-                    Div(
-                        A(
-                            Div(
-                                Img(src="/img/logo.png", cls="nav-logo"),
-                                Span("DEADDEVELOPERS", cls="nav-text"),
-                                cls="nav-logo-container"
-                            ),
-                            href="/",
-                            cls="brand-logo"
-                        ),
-                        Button("☰", cls="menu-button", onclick="menuButton.click();"),
-                        cls="nav-left"
-                    ),
-                    Div(
-                        A("/Features", href="/features"),
-                        A("/Community", href="/community"),
-                        A("/Blog", href="/blog"),
-                        A("/About", href="/about"),
-                        cls="nav-center"
-                    ),
-                    Div(
-                        A("Log in", href="/login", cls="nav-login"),
-                        A("Sign up", href="/signup", cls="nav-signup"),
-                        cls="nav-right"
-                    ),
-                    cls="main-nav",
-                    script="""
-                    // Handle scroll effect
-                    window.addEventListener('scroll', () => {
-                        const header = document.querySelector('.site-header');
-                        if (window.scrollY > 10) {
-                            header.classList.add('scrolled');
-                        } else {
-                            header.classList.remove('scrolled');
-                        }
-                    });
-
-                    // Handle mobile menu
-                    const menuButton = document.querySelector('.menu-button');
-                    const navCenter = document.querySelector('.nav-center');
-                    const navRight = document.querySelector('.nav-right');
-
-                    // Create backdrop
-                    const backdrop = document.createElement('div');
-                    backdrop.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background: rgba(0, 0, 0, 0.5);
-                        backdrop-filter: blur(4px);
-                        opacity: 0;
-                        visibility: hidden;
-                        transition: all 0.3s ease;
-                        z-index: 999;
-                    `;
-                    document.body.appendChild(backdrop);
-
-                    // Toggle menu
-                    menuButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const isActive = navCenter.classList.contains('active');
-                        navCenter.classList.toggle('active');
-                        navRight.classList.toggle('active');
-                        backdrop.style.opacity = isActive ? '0' : '1';
-                        backdrop.style.visibility = isActive ? 'hidden' : 'visible';
-                    });
-
-                    // Close menu when clicking outside
-                    backdrop.addEventListener('click', () => {
-                        navCenter.classList.remove('active');
-                        navRight.classList.remove('active');
-                        backdrop.style.opacity = '0';
-                        backdrop.style.visibility = 'hidden';
-                    });
-
-                    // Close menu when clicking nav links
-                    document.querySelectorAll('.nav-center a, .nav-right a').forEach(link => {
-                        link.addEventListener('click', () => {
-                            navCenter.classList.remove('active');
-                            navRight.classList.remove('active');
-                            backdrop.style.opacity = '0';
-                            backdrop.style.visibility = 'hidden';
-                        });
-                    });
-                    """
-                ),
-                cls="site-header"
-            ),
+            SiteHeader(session),
 
             # Hero Section
             Section(

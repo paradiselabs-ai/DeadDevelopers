@@ -15,6 +15,8 @@ django.setup()
 # Now that Django is properly configured, we can import the rest
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
+from starlette.staticfiles import StaticFiles
+import time
 
 # Import Django models and functionality
 from django.contrib.auth import get_user_model
@@ -62,11 +64,12 @@ app, rt = fast_app(
         skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about']
     ),
     hdrs=(
-        Link(rel='stylesheet', href='/css/style.css'),  # Our custom styles
+        # Add timestamp query parameter to bust cache
+        Link(rel='stylesheet', href=f'/css/style.css?v={int(time.time())}'),  # Our custom styles with cache busting
         Link(rel='stylesheet', href='https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap'),  # Monospace font
         Script(src='https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.24.1/prism.min.js'),  # Syntax highlighting
         Link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.24.1/themes/prism-tomorrow.min.css'),
-        Script(src='/js/nav.js'),  # Custom navigation JavaScript
+        Script(src='/js/header.js'),  # Custom navigation JavaScript
     )
 )
 

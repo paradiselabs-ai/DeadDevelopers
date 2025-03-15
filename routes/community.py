@@ -1,9 +1,14 @@
 from fasthtml.common import *
 from app import rt
+from routes.header import SiteHeader
+from fasthtml.svg import Svg, ft_svg as tag
 
 @rt('/community')
-def get():
+def get(session):
     """Community page for DeadDevelopers platform"""
+    # Store current path in session for active link highlighting
+    session['path'] = '/community'
+    
     return Titled(
         "Join the DeadDevelopers Community",
         Div(
@@ -334,37 +339,8 @@ def get():
             """),
             
             # Header/Navigation - Using the same structure as in features.py
-            Header(
-                Nav(
-                    Div(
-                        A(
-                            Div(
-                                Img(src="/img/logo.png", cls="nav-logo"),
-                                Span("DEADDEVELOPERS", cls="nav-text"),
-                                cls="nav-logo-container"
-                            ),
-                            href="/",
-                            cls="brand-logo"
-                        ),
-                        Button("☰", cls="menu-button", onclick="menuButton.click();"),
-                        cls="nav-left"
-                    ),
-                    Div(
-                        A("/Features", href="/features"),
-                        A("/Community", href="/community"),
-                        A("/Blog", href="/blog"),
-                        A("/About", href="/about"),
-                        cls="nav-center"
-                    ),
-                    Div(
-                        A("Log in", href="/login", cls="nav-login"),
-                        A("Sign up", href="/signup", cls="nav-signup"),
-                        cls="nav-right"
-                    ),
-                    cls="main-nav"
-                ),
-                cls="site-header"
-            ),
+            
+            SiteHeader(session),
             
             # Main content container
             Main(
@@ -388,10 +364,9 @@ def get():
                             Div(
                                 Div(
                                     Svg(
+                                        tag("path", d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z", fill="currentColor"),
                                         viewBox="0 0 24 24", 
                                         cls="icon"
-                                    )(
-                                        Path("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z", fill="currentColor")
                                     ),
                                     cls="card-icon"
                                 ),
@@ -406,10 +381,9 @@ def get():
                             Div(
                                 Div(
                                     Svg(
+                                        tag("path", d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z", fill="currentColor"),
                                         viewBox="0 0 24 24", 
                                         cls="icon"
-                                    )(
-                                        Path("M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z", fill="currentColor")
                                     ),
                                     cls="card-icon"
                                 ),

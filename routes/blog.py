@@ -1,12 +1,16 @@
 from fasthtml.common import *
 from app import rt
 from starlette.responses import RedirectResponse
+from routes.header import SiteHeader
 
 @rt('/blog')
-def get(req):
+def get(session):
     """Blog page for DeadDevelopers platform"""
+    # Store current path in session for active link highlighting
+    session['path'] = '/blog'
+    
     # Check if user is authenticated
-    is_authenticated = req.scope.get('auth') is not None
+    is_authenticated = session.get('auth') is not None
     
     # Create write post button with appropriate action
     write_post_btn = Button(
@@ -278,38 +282,8 @@ def get(req):
             Div(
                 # Main Content
                 Div(
-                    # Header/Navigation - Using the same structure as in features.py
-                    Header(
-                        Nav(
-                            Div(
-                                A(
-                                    Div(
-                                        Img(src="/img/logo.png", cls="nav-logo"),
-                                        Span("DEADDEVELOPERS", cls="nav-text"),
-                                        cls="nav-logo-container"
-                                    ),
-                                    href="/",
-                                    cls="brand-logo"
-                                ),
-                                Button("☰", cls="menu-button", onclick="menuButton.click();"),
-                                cls="nav-left"
-                            ),
-                            Div(
-                                A("/Features", href="/features"),
-                                A("/Community", href="/community"),
-                                A("/Blog", href="/blog"),
-                                A("/About", href="/about"),
-                                cls="nav-center"
-                            ),
-                            Div(
-                                A("Log in", href="/login", cls="nav-login"),
-                                A("Sign up", href="/signup", cls="nav-signup"),
-                                cls="nav-right"
-                            ),
-                            cls="main-nav"
-                        ),
-                        cls="site-header"
-                    ),
+                    # Header/Navigation
+                    SiteHeader(session),
                     
                     # Write Post Button Section
                     Div(
