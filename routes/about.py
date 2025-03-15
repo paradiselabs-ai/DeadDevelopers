@@ -53,7 +53,6 @@ def get(session):
                   --color-accent: #00ff66;
                   --color-text: #ffffff;
                   --color-text-secondary: #cccccc;
-                  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
                   --spacing-unit: clamp(1rem, 2vw, 1.5rem);
                   --content-width: min(90%, 1200px);
                 }
@@ -69,7 +68,7 @@ def get(session):
                 body {
                   background-color: var(--color-background);
                   color: var(--color-text);
-                  font-family: var(--font-main);
+                  
                   line-height: 1.6;
                   -webkit-font-smoothing: antialiased;
                   -moz-osx-font-smoothing: grayscale;
