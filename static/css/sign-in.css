@@ -1,0 +1,302 @@
+/* Reset for login page */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a1a;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23333333' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 1rem;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.form-wrapper {
+  background-color: rgba(42, 42, 42, 0.75);
+  backdrop-filter: blur(12px);
+  padding: 2.75rem;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid rgba(0, 255, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 2px rgba(0, 255, 0, 0.2), 0 0 8px rgba(0, 255, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.form-content h1 {
+  color: white;
+  font-size: 1.6rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.signin-input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  background-color: rgba(26, 26, 26, 0.7);
+  border: 1px solid rgba(64, 64, 64, 0.5);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.signin-input:focus {
+  outline: none;
+  border-color: rgba(0, 255, 0, 0.7);
+  box-shadow: 0 0 0 1px rgba(0, 255, 0, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.signin-input::placeholder {
+  color: rgba(128, 128, 128, 0.7);
+}
+
+.forgot-password {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #00ff00;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.forgot-password:hover {
+  color: #33ff33;
+  text-decoration: none;
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: #00ff00;
+  color: rgba(0, 0, 0, 0.85);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 1.5rem 0 0.5rem;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.login-button:hover {
+  background-color: #33ff33;
+}
+
+.login-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.75rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.divider span {
+  padding: 0 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.social-logins {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.social-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(30, 30, 30, 0.7);
+  color: white;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.social-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 0.85rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  fill: white;
+}
+
+.social-button:hover {
+  background-color: rgba(40, 40, 40, 0.9);
+}
+
+.signup-prompt {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  margin: 1.75rem 0 0;
+  font-weight: 400;
+}
+
+.signup-link {
+  color: #00ff00;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.signup-link:hover {
+  color: #33ff33;
+  text-decoration: none;
+}
+
+.form-errors {
+  color: #ff4d4d;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Mobile Section Display Logic - initially hidden */
+.mobile-social-section {
+  display: none;
+}
+
+/* Desktop elements initially hidden */
+.vertical-divider {
+  display: none;
+}
+
+.social-content {
+  display: none;
+}
+
+/* Desktop Layout */
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+  }
+
+  .form-wrapper {
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: minmax(400px, 1fr) auto minmax(400px, 1fr);
+    padding: 0;
+    gap: 0;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    align-items: stretch;
+    height: auto;
+  }
+
+  .form-content {
+    padding: 2.75rem;
+    background-color: rgba(42, 42, 42, 0.75);
+    border-radius: 14px 0 0 14px;
+    border: 1px solid rgba(0, 255, 0, 0.15);
+    border-right: none; /* No border on the right side where divider is */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 2px rgba(0, 255, 0, 0.2), 0 0 8px rgba(0, 255, 0, 0.1);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Fixed vertical divider for desktop view */
+  .vertical-divider {
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 255, 0, 0.15), 0.2%,
+      rgba(38, 38, 38, 1) 0.2%,
+      rgba(0, 255, 0, 0.2) 50%,
+      rgba(38, 38, 38, 1) 99.8%,
+      rgba(0, 255, 0, 0.15) 100%
+    );
+  }
+
+  /* Desktop social content styling */
+  .social-content {
+    padding: 2.75rem;
+    background-color: #262626;
+    border-radius: 0 14px 14px 0;
+    border: 1px solid rgba(0, 255, 0, 0.15);
+    border-left: none; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .desktop-heading {
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .social-content .social-logins {
+    margin-top: 1rem;
+  }
+
+  .social-content .signup-prompt {
+    margin-top: auto;
+  }
+
+  /* Hide mobile sections in desktop view */
+  .mobile-social-section {
+    display: none;
+  }
+} 

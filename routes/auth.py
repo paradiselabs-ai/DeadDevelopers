@@ -6,6 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 import re
+from fasthtml.svg import Svg, ft_svg as tag
 
 @dataclass
 class SignupForm:
@@ -163,69 +164,225 @@ def post(form: SignupForm, req):
     return RedirectResponse('/dashboard', status_code=303)
 
 def login_form(error=None):
-    """Terminal-styled login form"""
+    """Styled login form that closely matches the original React implementation"""
     error_content = error_message(error) if error else ""
     
+    # Create the form component - structured like the React version
     form = Form(
-        Input(
-            type="email",
-            name="email",
-            placeholder="Email",
-            required=True,
-            cls="login-input terminal-input"
+        Div(
+            Label("Email Address", htmlFor="email"),
+            Input(
+                type="email",
+                id="email",
+                name="email",
+                placeholder="Enter your email",
+                required=True,
+                cls="signin-input"
+            ),
+            cls="form-group"
         ),
-        Input(
-            type="password",
-            name="password",
-            placeholder="Password",
-            required=True,
-            cls="login-input terminal-input"
+        Div(
+            Label("Password", htmlFor="password"),
+            Input(
+                type="password",
+                id="password",
+                name="password",
+                placeholder="Enter your password",
+                required=True,
+                cls="signin-input"
+            ),
+            A("Forgot Password?", href="#", cls="forgot-password"),
+            cls="form-group"
         ),
-        # Error container
         Div(
             error_content,
             id="login-errors",
-            cls="form-errors terminal-errors"
+            cls="form-errors"
         ),
         Button(
             "Log In",
             type="submit",
-            cls="login-submit terminal-button"
+            cls="login-button"
         ),
         hx_post="/login",
-        cls="login-form terminal-form"
+        cls="signin-form"
     )
     
-    github_login = A(
+    # Create responsive JavaScript to handle mobile/desktop views exactly like React's approach
+    responsive_script = Script("""
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+    
+    function handleGoogleLogin() {
+        console.log("Logging in with Google");
+        // Add your Google login logic here
+    }
+    
+    function handleGithubLogin() {
+        console.log("Logging in with GitHub");
+        // Add your GitHub login logic here
+    }
+    
+    // Initial setup on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setupLayout();
+        // Re-check on window resize
+        window.addEventListener('resize', setupLayout);
+    });
+    
+    function setupLayout() {
+        const formWrapper = document.querySelector('.form-wrapper');
+        const mobileSection = document.querySelector('.mobile-social-section');
+        const divider = document.querySelector('.vertical-divider');
+        const socialContent = document.querySelector('.social-content');
+        const formContent = document.querySelector('.form-content');
+        
+        if (isMobile()) {
+            // Mobile layout
+            if (mobileSection) mobileSection.style.display = 'block';
+            if (divider) divider.style.display = 'none';
+            if (socialContent) socialContent.style.display = 'none';
+            
+            if (formWrapper) {
+                formWrapper.style.display = 'block';
+                formWrapper.style.backgroundColor = 'rgba(42, 42, 42, 0.75)';
+                formWrapper.style.borderRadius = '14px';
+                formWrapper.style.border = '1px solid rgba(0, 255, 0, 0.15)';
+                formWrapper.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 2px rgba(0, 255, 0, 0.2), 0 0 8px rgba(0, 255, 0, 0.1)';
+                formWrapper.style.padding = '2.75rem';
+                formWrapper.style.maxWidth = '400px';
+            }
+            
+            if (formContent) {
+                formContent.style.padding = '0';
+                formContent.style.border = 'none';
+                formContent.style.borderRadius = '0';
+                formContent.style.boxShadow = 'none';
+                formContent.style.backgroundColor = 'transparent';
+            }
+        } else {
+            // Desktop layout
+            if (mobileSection) mobileSection.style.display = 'none';
+            if (divider) divider.style.display = 'block';
+            if (socialContent) socialContent.style.display = 'flex';
+            
+            if (formWrapper) {
+                formWrapper.style.display = 'grid';
+                formWrapper.style.backgroundColor = 'transparent';
+                formWrapper.style.borderRadius = '0';
+                formWrapper.style.border = 'none';
+                formWrapper.style.boxShadow = 'none';
+                formWrapper.style.padding = '0';
+                formWrapper.style.maxWidth = '900px';
+            }
+            
+            if (formContent) {
+                formContent.style.padding = '2.75rem';
+                formContent.style.backgroundColor = 'rgba(42, 42, 42, 0.75)';
+                formContent.style.borderRadius = '14px 0 0 14px';
+                formContent.style.border = '1px solid rgba(0, 255, 0, 0.15)';
+                formContent.style.borderRight = 'none';
+                formContent.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 2px rgba(0, 255, 0, 0.2), 0 0 8px rgba(0, 255, 0, 0.1)';
+            }
+        }
+    }
+    """)
+    
+    # Mobile version of social login options
+    mobile_social_section = Div(
         Div(
-            Span("Continue with GitHub", cls="oauth-text"),
-            cls="oauth-button github"
-        ),
-        href="/accounts/github/login/",
-        cls="oauth-link"
-    )
-    
-    signup_link = P(
-        "Don't have an account? ",
-        A("Sign up", href="/signup", cls="terminal-link"),
-        cls="login-link-text terminal-text"
-    )
-    
-    return Card(
-        A("ESC ← Back to Homepage", 
-            href="/",
-            cls="back-link terminal-link",
-            style="display: block; margin-bottom: 15px;"
-        ),
-        H2("Welcome Back", cls="terminal-header"),
-        form,
-        Div(
-            P("OR", cls="divider-text"),
+            Span("OR"),
             cls="divider"
         ),
-        github_login,
-        signup_link,
-        cls="login-card terminal-card"
+        Div(
+            Button(
+                Svg(
+                    tag("path", d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z", fill="currentColor"),
+                    viewBox="0 0 24 24",
+                    xmlns="http://www.w3.org/2000/svg",
+                    cls="social-icon"
+                ),
+                "Continue with Google",
+                type="button",
+                cls="social-button google-button",
+                onclick="handleGoogleLogin()"
+            ),
+            Button(
+                Svg(
+                    tag("path", d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12", fill="currentColor"),
+                    viewBox="0 0 24 24",
+                    xmlns="http://www.w3.org/2000/svg",
+                    cls="social-icon"
+                ),
+                "Continue with GitHub",
+                type="button",
+                cls="social-button github-button",
+                onclick="handleGithubLogin()"
+            ),
+            cls="social-logins"
+        ),
+        P(
+            "Don't have an account? ",
+            A("Sign up now", href="/signup", cls="signup-link"),
+            cls="signup-prompt"
+        ),
+        cls="mobile-social-section"
+    )
+    
+    # Return a structure that closely mirrors the React component's layout
+    return Div(
+        Link(rel="stylesheet", href="/css/sign-in.css"),
+        Div(
+            Div(
+                H1("Sign In to DeadDevelopers"),
+                form,
+                mobile_social_section,  # Only shown on mobile
+                cls="form-content"
+            ),
+            # The vertical divider for desktop layout - completely separate from panel borders
+            Div(cls="vertical-divider"),
+            # Desktop social content (only shown on desktop)
+            Div(
+                H2("Or continue with", cls="desktop-heading"),
+                Div(
+                    Button(
+                        Svg(
+                            tag("path", d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z", fill="currentColor"),
+                            viewBox="0 0 24 24",
+                            xmlns="http://www.w3.org/2000/svg",
+                            cls="social-icon"
+                        ),
+                        "Continue with Google",
+                        type="button",
+                        cls="social-button google-button",
+                        onclick="handleGoogleLogin()"
+                    ),
+                    Button(
+                        Svg(
+                            tag("path", d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12", fill="currentColor"),
+                            viewBox="0 0 24 24",
+                            xmlns="http://www.w3.org/2000/svg",
+                            cls="social-icon"
+                        ),
+                        "Continue with GitHub",
+                        type="button",
+                        cls="social-button github-button",
+                        onclick="handleGithubLogin()"
+                    ),
+                    cls="social-logins"
+                ),
+                P(
+                    "Don't have an account? ",
+                    A("Sign up now", href="/signup", cls="signup-link"),
+                    cls="signup-prompt"
+                ),
+                cls="social-content"
+            ),
+            cls="form-wrapper"
+        ),
+        responsive_script,
+        cls="container"
     )
 
 @rt('/login')
@@ -241,12 +398,7 @@ def post(email: str, password: str, req):
     
     # If authentication fails, return login form with error
     if not user:
-        return Card(
-            A("← Back to home", href="/", cls="back-link terminal-link"),
-            H2("Welcome Back", cls="terminal-header"),
-            login_form("Invalid email or password"),
-            cls="login-card terminal-card"
-        )
+        return login_form("Invalid email or password")
     
     # Set session data for FastHTML access instead of using Django login
     req.session['auth'] = user.username
