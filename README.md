@@ -37,7 +37,7 @@ If this describes your everyday workflow - _you'll fit right in_
 ## Tech Stack
 
 - **Frontend**: FastHTML
-- **Backend**: Django
+- **Backend**: Django (including blog functionality)
 - **Hosting**: Vercel Pro
 - **Database**: Vercel Postgres
 - **AI/ML**: OpenRouter + OpenAI + Vercel AI SDK

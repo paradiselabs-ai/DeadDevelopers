@@ -5,6 +5,11 @@ from app import app, rt
 from routes.auth import *
 from routes.demo import *
 from routes.dashboard import *
+from routes.features import *
+from routes.community import *
+from routes.blog import *
+from routes.about import *
+from routes.header import *
 
 # Landing page route
 @rt('/')

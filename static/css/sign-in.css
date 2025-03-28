@@ -120,6 +120,68 @@ html, body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.form-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.75rem 0;
+  position: relative;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.divider-text {
+  padding: 0 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.github-oauth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(30, 30, 30, 0.7);
+  color: white;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  margin-bottom: 1rem;
+}
+
+.github-oauth-button:hover {
+  background-color: rgba(40, 40, 40, 0.9);
+  border-color: rgba(0, 255, 0, 0.4);
+}
+
+.oauth-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oauth-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.85rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
 .divider {
   display: flex;
   align-items: center;

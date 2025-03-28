@@ -6,6 +6,7 @@
 	],
 	"settings": {
 		"terminal.integrated.suggest.windowsExecutableExtensions": {},
-		"html2ft.attrs1st": true
+		"html2ft.attrs1st": true,
+		"zencoder.enableRepoIndexing": true
 	}
 }

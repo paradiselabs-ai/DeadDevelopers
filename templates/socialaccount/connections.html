@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connected Accounts - DeadDevelopers</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background-color: var(--terminal);
+            color: #f0f0f0;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .terminal-card {
+            background: var(--steel);
+            border: 1px solid var(--acid);
+            border-radius: 4px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .terminal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--acid);
+        }
+        
+        .terminal-card::after {
+            content: '● ● ●';
+            position: absolute;
+            top: 0.5rem;
+            left: 1rem;
+            color: var(--smoke);
+            font-size: 0.8rem;
+            letter-spacing: 0.5rem;
+        }
+        
+        h1 {
+            color: var(--acid);
+            margin-top: 0;
+            font-size: 1.8rem;
+        }
+        
+        p {
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .terminal-button {
+            background: transparent;
+            color: var(--acid);
+            border: 1px solid var(--acid);
+            padding: 0.8rem 1.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .terminal-button:hover {
+            background: var(--acid);
+            color: var(--terminal);
+        }
+        
+        .connection-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+        
+        .connection-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid var(--acid);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .connection-provider {
+            display: flex;
+            align-items: center;
+        }
+        
+        .provider-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 1rem;
+        }
+        
+        .connection-actions form {
+            display: inline;
+        }
+        
+        .disconnect-button {
+            background: transparent;
+            color: #ff3333;
+            border: 1px solid #ff3333;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .disconnect-button:hover {
+            background: #ff3333;
+            color: var(--terminal);
+        }
+        
+        .add-connection {
+            margin-top: 2rem;
+        }
+        
+        .provider-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .provider-button {
+            background: transparent;
+            color: var(--voltage);
+            border: 1px solid var(--voltage);
+            padding: 0.8rem 1.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .provider-button:hover {
+            background: var(--voltage);
+            color: var(--terminal);
+        }
+        
+        .provider-button img {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-left: 3px solid var(--acid);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="terminal-card">
+            <h1>Connected Accounts</h1>
+            
+            <p>Manage your connected social accounts for DeadDevelopers.</p>
+            
+            <div class="code-block">
+                // Current connections: {{ accounts|length }}
+                // Primary account: {{ user.email }}
+            </div>
+            
+            {% if accounts %}
+                <ul class="connection-list">
+                    {% for account in accounts %}
+                        <li class="connection-item">
+                            <div class="connection-provider">
+                                {% if account.provider == 'github' %}
+                                    <img src="/static/img/github-logo.svg" alt="GitHub" class="provider-icon">
+                                {% endif %}
+                                <span>{{ account.provider|title }} ({{ account.uid }})</span>
+                            </div>
+                            <div class="connection-actions">
+                                <form method="post" action="{% url 'socialaccount_connections' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="account" value="{{ account.id }}">
+                                    <button type="submit" class="disconnect-button">Disconnect</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You have no connected social accounts.</p>
+            {% endif %}
+            
+            <div class="add-connection">
+                <h2>Add a Connection</h2>
+                <p>Connect your DeadDevelopers account with these services:</p>
+                
+                <div class="provider-list">
+                    <a href="{% url 'socialaccount_connections' %}?process=connect&next={% url 'socialaccount_connections' %}" class="provider-button">
+                        <img src="/static/img/github-logo.svg" alt="GitHub">
+                        Connect GitHub
+                    </a>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <a href="/dashboard" class="terminal-button">Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

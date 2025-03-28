@@ -18,7 +18,7 @@ class SignupForm:
 def signup_form(errors=None):
     """Terminal-styled signup form with the project's aesthetic"""
     return Card(
-        A("ESC ← Let me look at more things that would make me want to join", 
+        A("ESC ← Let me look at more things that would make me want to join",
             href="/",
             cls="back-link terminal-link",
             style="display: block; margin-bottom: 15px;"
@@ -75,6 +75,19 @@ def signup_form(errors=None):
                 type="submit",
                 cls="signup-submit terminal-button"
             ),
+            Div(
+                P("Or continue with", cls="divider-text"),
+                cls="form-divider"
+            ),
+            A(
+                Div(
+                    Img(src="/static/img/github-logo.svg", alt="GitHub Logo", cls="oauth-icon"),
+                    "Sign up with GitHub",
+                    cls="oauth-button-content"
+                ),
+                href="/accounts/github/login/?process=login",
+                cls="github-oauth-button"
+            ),
             hx_post="/signup",
             hx_swap="outerHTML",
             cls="signup-form terminal-form"
@@ -104,23 +117,23 @@ def post(form: SignupForm, req):
     """Handle signup form submission and create Django user"""
     # Form validation with terminal-style error messages
     errors = []
-    
+
     # Validate email format
     if not re.match(r"[^@]+@[^@]+\.[^@]+", form.email):
         errors.append(error_message("Invalid email format."))
-    
+
     # Check if email already exists
     if User.objects.filter(email=form.email).exists():
         errors.append(error_message("Email already registered."))
-    
+
     # Generate username from name if not provided
     if not form.username:
         form.username = form.name.lower().replace(" ", "_")
-    
+
     # Check if username is available
     if User.objects.filter(username=form.username).exists():
         errors.append(error_message("Username already taken."))
-    
+
     # Validate password strength
     try:
         validate_password(form.password)
@@ -128,17 +141,17 @@ def post(form: SignupForm, req):
         # Format Django's password validation errors
         for error in e.messages:
             errors.append(error_message(error))
-    
+
     # Return form with errors if validation failed
     if errors:
         response = signup_form(errors)
         return response
-    
+
     # Split name into first and last name
     name_parts = form.name.split(" ", 1)
     first_name = name_parts[0]
     last_name = name_parts[1] if len(name_parts) > 1 else ""
-    
+
     # Create user through Django's auth system
     user = User.objects.create_user(
         username=form.username,
@@ -148,25 +161,46 @@ def post(form: SignupForm, req):
         last_name=last_name,
         ai_percentage=0
     )
-    
-    # Set session data for FastHTML access instead of using Django login
-    req.session['auth'] = user.username
-    req.session['user'] = {
-        'name': user.get_display_name(),
-        'email': user.email,
-        'ai_percentage': user.ai_percentage
-    }
-    
-    # Add a welcome toast
-    add_toast(req.session, f"Welcome aboard, {user.get_display_name()}! Let's write some AI-powered code.", "success")
-    
-    # Redirect to dashboard
-    return RedirectResponse('/dashboard', status_code=303)
+
+    # Import django-allauth's email confirmation functionality
+    from allauth.account.models import EmailAddress
+    from allauth.account.utils import send_email_confirmation
+
+    # Create EmailAddress record and send confirmation email
+    email_address, created = EmailAddress.objects.get_or_create(
+        user=user,
+        email=user.email,
+        defaults={'primary': True, 'verified': False}
+    )
+
+    if not email_address.verified:
+        send_email_confirmation(req, user, email=user.email)
+
+        # Add a toast notification
+        add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account.", "success")
+
+        # Redirect to verification sent page
+        return RedirectResponse('/accounts/confirm-email/', status_code=303)
+    else:
+        # If email is already verified (unlikely in normal flow)
+        # Set session data for FastHTML access
+        req.session['auth'] = user.username
+        req.session['user'] = {
+            'name': user.get_display_name(),
+            'email': user.email,
+            'ai_percentage': user.ai_percentage
+        }
+
+        # Add a welcome toast
+        add_toast(req.session, f"Welcome aboard, {user.get_display_name()}! Let's write some AI-powered code.", "success")
+
+        # Redirect to dashboard
+        return RedirectResponse('/dashboard', status_code=303)
 
 def login_form(error=None):
     """Styled login form that closely matches the original React implementation"""
     error_content = error_message(error) if error else ""
-    
+
     # Create the form component - structured like the React version
     form = Form(
         Div(
@@ -203,6 +237,19 @@ def login_form(error=None):
             "Log In",
             type="submit",
             cls="login-button"
+        ),
+        Div(
+            P("Or continue with", cls="divider-text"),
+            cls="form-divider"
+        ),
+        A(
+            Div(
+                Img(src="/static/img/github-logo.svg", alt="GitHub Logo", cls="oauth-icon"),
+                "Continue with GitHub",
+                cls="oauth-button-content"
+            ),
+            href="/accounts/github/login/",
+            cls="github-oauth-button"
         ),
         hx_post="/login",
         cls="signin-form"
@@ -395,11 +442,34 @@ def post(email: str, password: str, req):
     """Handle login form submission and authenticate Django user"""
     # Attempt to authenticate user
     user = authenticate(username=email, password=password)
-    
+
     # If authentication fails, return login form with error
     if not user:
         return login_form("Invalid email or password")
-    
+
+    # Import django-allauth's email verification functionality
+    from allauth.account.models import EmailAddress
+
+    # Check if the user's email is verified
+    try:
+        email_address = EmailAddress.objects.get(user=user, email=user.email)
+        if not email_address.verified:
+            # If email is not verified, show error and option to resend
+            from allauth.account.utils import send_email_confirmation
+            send_email_confirmation(req, user, email=user.email)
+            return login_form("Email not verified. We've sent a new verification email to your address.")
+    except EmailAddress.DoesNotExist:
+        # If EmailAddress record doesn't exist, create it and send verification
+        email_address = EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            primary=True,
+            verified=False
+        )
+        from allauth.account.utils import send_email_confirmation
+        send_email_confirmation(req, user, email=user.email)
+        return login_form("Email not verified. We've sent a verification email to your address.")
+
     # Set session data for FastHTML access instead of using Django login
     req.session['auth'] = user.username
     req.session['user'] = {
@@ -407,10 +477,10 @@ def post(email: str, password: str, req):
         'email': user.email,
         'ai_percentage': user.ai_percentage
     }
-    
+
     # Add welcome back toast
     add_toast(req.session, f"Welcome back, {user.get_display_name()}!", "success")
-    
+
     # Redirect to dashboard
     return RedirectResponse('/dashboard', status_code=303)
 
