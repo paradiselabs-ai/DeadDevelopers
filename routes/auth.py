@@ -21,6 +21,11 @@ class SignupForm:
 
 def signup_form(errors=None):
     """Modern signup form based on the React implementation"""
+    # Ensure errors is a list or empty
+    if errors is None:
+        errors = []
+    elif not isinstance(errors, list):
+        errors = [error_message(errors)]
     # Create responsive JavaScript to handle mobile/desktop views
     responsive_script = Script("""
     document.addEventListener('DOMContentLoaded', function() {
@@ -249,7 +254,7 @@ def signup_form(errors=None):
                     cls="form-group checkbox-group"
                 ),
                 Div(
-                    errors if errors else "",
+                    *errors if errors else "",
                     id="signup-errors",
                     cls="form-errors"
                 ),
@@ -260,8 +265,8 @@ def signup_form(errors=None):
                 type="submit",
                 cls="signup-button"
             ),
-            hx_post="/signup",
-            hx_swap="outerHTML",
+            action="/signup",
+            method="post",
             cls="signup-form"
         ),
         mobile_social_section,
@@ -320,10 +325,21 @@ def error_message(error_text):
         cls="error-message"
     )
 
+def signup_page(errors=None):
+    """Render the full signup page with the form and any errors"""
+    # Ensure errors is properly formatted
+    if errors is None:
+        errors = []
+
+    return Titled(
+        Link(rel="stylesheet", href="/css/style.css"),
+        signup_form(errors)
+    )
+
 @rt('/signup')
 def get():
     """Render modern signup form"""
-    return signup_form()
+    return signup_page()
 
 @rt('/signup')
 def post(form: SignupForm, req):
@@ -350,6 +366,9 @@ def post(form: SignupForm, req):
         # Format Django's password validation errors
         for error in e.messages:
             errors.append(error_message(error))
+    except Exception as e:
+        # Handle any other validation errors
+        errors.append(error_message(str(e)))
 
     # Validate terms agreement
     if not form.agree_terms:
@@ -357,38 +376,53 @@ def post(form: SignupForm, req):
 
     # Return form with errors if validation failed
     if errors:
-        response = signup_form(errors)
-        return response
+        # Return the full signup page with errors
+        return signup_page(errors)
 
-    # Create user through Django's auth system
-    user = User.objects.create_user(
-        username=form.username,
-        email=form.email,
-        password=form.password,
-        first_name=form.first_name,
-        last_name=form.last_name,
-        ai_percentage=0
-    )
+    try:
+        # Create user through Django's auth system
+        user = User.objects.create_user(
+            username=form.username,
+            email=form.email,
+            password=form.password,
+            first_name=form.first_name,
+            last_name=form.last_name,
+            ai_percentage=0
+        )
 
-    # Create EmailAddress record for the user (unverified)
-    email_address, created = EmailAddress.objects.get_or_create(
-        user=user,
-        email=form.email,
-        defaults={'primary': True, 'verified': False}
-    )
+        # Create EmailAddress record for the user (unverified)
+        email_address, created = EmailAddress.objects.get_or_create(
+            user=user,
+            email=form.email,
+            defaults={'primary': True, 'verified': False}
+        )
 
-    # Send verification email
-    send_email_confirmation(req, user)
+        # Send verification email
+        send_email_confirmation(req, user)
 
-    # Add a welcome toast with improved messaging
-    add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account and unlock all features.", "success")
+        # Add a welcome toast with improved messaging
+        add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account and unlock all features.", "success")
 
-    # Redirect to verification sent page
-    return RedirectResponse('/accounts/confirm-email/', status_code=303)
+        # Redirect to verification sent page
+        return RedirectResponse('/accounts/confirm-email/', status_code=303)
+
+    except Exception as e:
+        # Handle any unexpected errors during user creation
+        errors.append(error_message(f"An error occurred during registration: {str(e)}"))
+        return signup_page(errors)
 
 def login_form(error=None):
     """Styled login form that closely matches the original React implementation"""
-    error_content = error_message(error) if error else ""
+    # Handle different types of error inputs
+    if isinstance(error, list):
+        # If it's a list of errors, use them directly
+        errors = error
+    elif error:
+        # If it's a single error string, convert to a list with one error message
+        errors = [error_message(error)]
+    else:
+        # No errors
+        errors = []
     
     # Create the form component - structured like the React version
     form = Form(
@@ -418,7 +452,7 @@ def login_form(error=None):
             cls="form-group"
         ),
         Div(
-            error_content,
+            *errors if errors else "",
             id="login-errors",
             cls="form-errors"
         ),
@@ -427,7 +461,8 @@ def login_form(error=None):
             type="submit",
             cls="login-button"
         ),
-        hx_post="/login",
+        action="/login",
+        method="post",
         cls="signin-form"
     )
     
@@ -623,10 +658,26 @@ def login_form(error=None):
         cls="container"
     )
 
+def login_page(error=None):
+    """Render the full login page with the form and any errors"""
+    # Ensure errors is properly formatted
+    if error is None:
+        errors = []
+    elif isinstance(error, list):
+        errors = error
+    else:
+        errors = [error_message(error)]
+
+    return Titled(
+        "Log In - DeadDevelopers",
+        Link(rel="stylesheet", href="/css/style.css"),
+        login_form(errors)
+    )
+
 @rt('/login')
 def get():
     """Render modern login form"""
-    return login_form()
+    return login_page()
 
 @rt('/login')
 def post(email: str, password: str, req):
@@ -634,9 +685,13 @@ def post(email: str, password: str, req):
     # Attempt to authenticate user
     user = authenticate(username=email, password=password)
 
-    # If authentication fails, return login form with error
+    # Create a list for errors
+    errors = []
+
+    # If authentication fails, return login page with error
     if not user:
-        return login_form("Invalid email or password")
+        errors.append(error_message("Invalid email or password"))
+        return login_page(errors)
 
     # Check if email is verified
     try:
@@ -644,7 +699,8 @@ def post(email: str, password: str, req):
         if not email_address.verified:
             # Send a new verification email
             send_email_confirmation(req, user)
-            return login_form("Email not verified. We've sent a new verification email to your address.")
+            errors.append(error_message("Email not verified. We've sent a new verification email to your address."))
+            return login_page(errors)
     except EmailAddress.DoesNotExist:
         # Create an email address record if it doesn't exist
         EmailAddress.objects.create(
@@ -655,7 +711,8 @@ def post(email: str, password: str, req):
         )
         # Send verification email
         send_email_confirmation(req, user)
-        return login_form("Email not verified. We've sent a verification email to your address.")
+        errors.append(error_message("Email not verified. We've sent a verification email to your address."))
+        return login_page(errors)
 
     # Set session data for FastHTML access instead of using Django login
     req.session['auth'] = user.username
