@@ -1,0 +1,10 @@
+Hello from DeadDevelopers!
+
+You're receiving this email because user {{ user_display }} has given this address as their email address to connect their account.
+
+To confirm this is correct, go to {{ activate_url }}
+
+If you did not sign up for this site, you can safely ignore this email.
+
+Thanks,
+DeadDevelopers Team

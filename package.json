@@ -1,0 +1,12 @@
+{
+  "name": "deaddevelopers",
+  "version": "1.0.0",
+  "description": "A community platform for developers who use AI for 80%+ of their workflow. Built with FastHTML, Django, and Vercel.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

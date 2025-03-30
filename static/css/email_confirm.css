@@ -1,0 +1,104 @@
+/* Email confirmation page styles */
+body {
+    background-color: var(--terminal);
+    color: #f0f0f0;
+    font-family: 'JetBrains Mono', monospace;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.terminal-card {
+    background: var(--steel);
+    border: 1px solid var(--acid);
+    border-radius: 4px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.terminal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--acid);
+}
+
+.terminal-card::after {
+    content: '● ● ●';
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem;
+    color: var(--smoke);
+    font-size: 0.8rem;
+    letter-spacing: 0.5rem;
+}
+
+h1 {
+    color: var(--acid);
+    margin-top: 0;
+    font-size: 1.8rem;
+}
+
+p {
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.terminal-button {
+    background: transparent;
+    color: var(--acid);
+    border: 1px solid var(--acid);
+    padding: 0.8rem 1.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.terminal-button:hover {
+    background: var(--acid);
+    color: var(--terminal);
+}
+
+.error-message {
+    background: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #ff3333;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.success-message {
+    background: rgba(0, 255, 102, 0.1);
+    border-left: 3px solid var(--acid);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.code-block {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-left: 3px solid var(--acid);
+    font-family: 'JetBrains Mono', monospace;
+    margin: 1rem 0;
+    overflow-x: auto;
+}

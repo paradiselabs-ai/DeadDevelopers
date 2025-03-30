@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Email Sent - DeadDevelopers</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background-color: var(--terminal);
+            color: #f0f0f0;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .terminal-card {
+            background: var(--steel);
+            border: 1px solid var(--acid);
+            border-radius: 4px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .terminal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--acid);
+        }
+        
+        .terminal-card::after {
+            content: '● ● ●';
+            position: absolute;
+            top: 0.5rem;
+            left: 1rem;
+            color: var(--smoke);
+            font-size: 0.8rem;
+            letter-spacing: 0.5rem;
+        }
+        
+        h1 {
+            color: var(--acid);
+            margin-top: 0;
+            font-size: 1.8rem;
+        }
+        
+        p {
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .terminal-button {
+            background: transparent;
+            color: var(--acid);
+            border: 1px solid var(--acid);
+            padding: 0.8rem 1.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .terminal-button:hover {
+            background: var(--acid);
+            color: var(--terminal);
+        }
+        
+        .info-message {
+            background: rgba(125, 249, 255, 0.1);
+            border-left: 3px solid var(--voltage);
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-left: 3px solid var(--acid);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .loading-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 255, 102, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--acid);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-line {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-pending {
+            background-color: var(--voltage);
+            box-shadow: 0 0 5px var(--voltage);
+        }
+        
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="terminal-card">
+            <h1>Verification Email Sent</h1>
+            
+            <div class="info-message">
+                <p>We've sent a verification email to your address. Please check your inbox and click the verification link to complete your registration.</p>
+            </div>
+            
+            <div class="code-block">
+                <div class="status-line">
+                    <span class="status-indicator status-pending"></span>
+                    <span class="status-text">STATUS: VERIFICATION_PENDING</span>
+                </div>
+                <div class="status-line">
+                    <span class="loading-indicator"></span>
+                    <span class="status-text">Waiting for email verification...</span>
+                </div>
+            </div>
+            
+            <p>If you don't see the email in your inbox, please check your spam folder. The verification link will expire in 3 days.</p>
+            
+            <p>Need help? Contact our support team or return to the homepage.</p>
+            
+            <a href="/" class="terminal-button">RETURN TO HOME</a>
+        </div>
+    </div>
+</body>
+</html>
