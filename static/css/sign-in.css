@@ -214,9 +214,52 @@ html, body {
 }
 
 .form-errors {
-  color: #ff4d4d;
-  font-size: 0.9rem;
   margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  background-color: rgba(255, 77, 77, 0.1);
+  border-left: 3px solid #ff4d4d;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  animation: errorFadeIn 0.3s ease-out forwards;
+}
+
+.error-text {
+  color: #ff4d4d;
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.error-message::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  background-color: #ff4d4d;
+  color: white;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  font-weight: bold;
+  font-size: 0.75rem;
+}
+
+@keyframes errorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Mobile Section Display Logic - initially hidden */

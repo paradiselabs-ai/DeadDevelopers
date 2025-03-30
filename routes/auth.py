@@ -319,7 +319,7 @@ def signup_form(errors=None):
     )
 
 def error_message(error_text):
-    """Format error message with modern style"""
+    """Format error message with modern style and improved visual appearance"""
     return Div(
         P(f"{error_text}", cls="error-text"),
         cls="error-message"
