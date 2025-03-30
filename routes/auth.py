@@ -14,97 +14,321 @@ from allauth.account.models import EmailAddress
 class SignupForm:
     email: str
     password: str
-    name: str
-    username: str = None
+    first_name: str
+    last_name: str
+    username: str
+    agree_terms: bool = False
 
 def signup_form(errors=None):
-    """Terminal-styled signup form with the project's aesthetic"""
-    return Card(
-        A("ESC ← Let me look at more things that would make me want to join", 
-            href="/",
-            cls="back-link terminal-link",
-            style="display: block; margin-bottom: 15px;"
+    """Modern signup form based on the React implementation"""
+    # Create responsive JavaScript to handle mobile/desktop views
+    responsive_script = Script("""
+    document.addEventListener('DOMContentLoaded', function() {
+        function checkMobile() {
+            return window.innerWidth < 768;
+        }
+
+        function setupLayout() {
+            const isMobile = checkMobile();
+            const formWrapper = document.querySelector('.form-wrapper');
+            const mobileSection = document.querySelector('.mobile-social-section');
+            const verticalDivider = document.querySelector('.vertical-divider');
+            const socialContent = document.querySelector('.social-content');
+
+            if (isMobile) {
+                // Mobile layout
+                if (mobileSection) mobileSection.style.display = 'block';
+                if (verticalDivider) verticalDivider.style.display = 'none';
+                if (socialContent) socialContent.style.display = 'none';
+            } else {
+                // Desktop layout
+                if (mobileSection) mobileSection.style.display = 'none';
+                if (verticalDivider) verticalDivider.style.display = 'block';
+                if (socialContent) socialContent.style.display = 'flex';
+            }
+        }
+
+        // Initial setup
+        setupLayout();
+
+        // Re-check on window resize
+        window.addEventListener('resize', setupLayout);
+
+        // Handle social login buttons
+        window.handleGoogleSignUp = function() {
+            console.log("Signing up with Google");
+            window.location.href = '/accounts/google/login/';
+        };
+
+        window.handleGithubSignUp = function() {
+            console.log("Signing up with GitHub");
+            window.location.href = '/accounts/github/login/';
+        };
+    });
+    """)
+
+    # Link to the CSS file
+    css_link = Link(rel="stylesheet", href="/css/sign-up.css")
+
+    # Google SVG icon
+    google_svg = Svg(
+        tag("path", d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"),
+        viewBox="0 0 24 24",
+        xmlns="http://www.w3.org/2000/svg",
+        cls="social-icon"
+    )
+
+    # GitHub SVG icon
+    github_svg = Svg(
+        tag("path", d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"),
+        viewBox="0 0 24 24",
+        xmlns="http://www.w3.org/2000/svg",
+        cls="social-icon"
+    )
+
+    # Mobile social section (only shown on mobile)
+    mobile_social_section = Div(
+        Div(
+            Span("OR CONTINUE WITH"),
+            cls="divider"
         ),
-        H2("Join DeadDevelopers", cls="terminal-header"),
+        Div(
+            Button(
+                google_svg,
+                "Google",
+                type="button",
+                cls="social-button google-button",
+                onclick="handleGoogleSignUp()"
+            ),
+            Button(
+                github_svg,
+                "GitHub",
+                type="button",
+                cls="social-button github-button",
+                onclick="handleGithubSignUp()"
+            ),
+            cls="social-logins"
+        ),
+        cls="mobile-social-section"
+    )
+
+    # Feature highlights for desktop view
+    feature_highlights = Div(
+        H3("Why join DeadDevelopers?", cls="features-title"),
+        Ul(
+            Li(
+                Div(cls="feature-icon code-icon"),
+                Div(
+                    H4("Collaborative Coding"),
+                    P("Code together in real-time with team members"),
+                    cls="feature-text"
+                ),
+                cls="feature-item"
+            ),
+            Li(
+                Div(cls="feature-icon deploy-icon"),
+                Div(
+                    H4("One-Click Deployment"),
+                    P("Deploy your projects instantly to production"),
+                    cls="feature-text"
+                ),
+                cls="feature-item"
+            ),
+            Li(
+                Div(cls="feature-icon community-icon"),
+                Div(
+                    H4("Developer Community"),
+                    P("Connect with like-minded developers"),
+                    cls="feature-text"
+                ),
+                cls="feature-item"
+            ),
+            cls="features-list"
+        ),
+        cls="feature-highlights"
+    )
+
+    # Main form content
+    form_content = Div(
+        A(
+            Svg(
+                tag("path", d="M19 12H5", stroke="currentColor", stroke_width="2", stroke_linecap="round", stroke_linejoin="round"),
+                tag("path", d="M12 19L5 12L12 5", stroke="currentColor", stroke_width="2", stroke_linecap="round", stroke_linejoin="round"),
+                width="16",
+                height="16",
+                viewBox="0 0 24 24",
+                fill="none",
+                xmlns="http://www.w3.org/2000/svg",
+                cls="back-icon"
+            ),
+            "Back to Home",
+            href="/",
+            cls="back-link"
+        ),
+        Div(
+            H1("Join DeadDevelopers"),
+            P("Create your account to get started", cls="form-subtitle"),
+            cls="form-header"
+        ),
         Form(
-            Input(
-                type="text",
-                name="name",
-                placeholder="Your Name",
-                required=True,
-                cls="signup-input terminal-input"
-            ),
-            Input(
-                type="text",
-                name="username",
-                placeholder="Username",
-                required=True,
-                cls="signup-input terminal-input"
-            ),
-            Input(
-                type="email",
-                name="email",
-                placeholder="Email",
-                required=True,
-                cls="signup-input terminal-input"
-            ),
-            Input(
-                type="password",
-                name="password",
-                placeholder="Password",
-                required=True,
-                cls="signup-input terminal-input"
-            ),
             Div(
-                errors if errors else "",
-                id="signup-errors",
-                cls="form-errors terminal-errors"
-            ),
-            P(
-                "By signing up, you acknowledge that you are signing up.",
-                cls="signup-disclaimer terminal-text"
-            ),
-            P(
-                "THERE WILL BE NO ESCAPE... ",
-                cls="signup-disclaimer terminal-text"
-            ),
-            P(
-                "(unless you delete your account)",
-                cls="signup-disclaimer terminal-text"
+                Div(
+                    Div(
+                        Label("First Name", for_="firstName"),
+                        Input(
+                            type="text",
+                            id="firstName",
+                            name="first_name",
+                            placeholder="First name",
+                            required=True
+                        ),
+                        cls="form-group"
+                    ),
+                    Div(
+                        Label("Last Name", for_="lastName"),
+                        Input(
+                            type="text",
+                            id="lastName",
+                            name="last_name",
+                            placeholder="Last name",
+                            required=True
+                        ),
+                        cls="form-group"
+                    ),
+                    cls="name-row"
+                ),
+                Div(
+                    Label("Username", for_="username"),
+                    Input(
+                        type="text",
+                        id="username",
+                        name="username",
+                        placeholder="Choose a username",
+                        required=True
+                    ),
+                    cls="form-group"
+                ),
+                Div(
+                    Label("Email Address", for_="email"),
+                    Input(
+                        type="email",
+                        id="email",
+                        name="email",
+                        placeholder="Email address",
+                        required=True
+                    ),
+                    cls="form-group"
+                ),
+                Div(
+                    Label("Password", for_="password"),
+                    Input(
+                        type="password",
+                        id="password",
+                        name="password",
+                        placeholder="Create a password",
+                        required=True
+                    ),
+                    P("Must be at least 8 characters", cls="password-hint"),
+                    cls="form-group"
+                ),
+                Div(
+                    Input(
+                        type="checkbox",
+                        id="agreeTerms",
+                        name="agree_terms",
+                        required=True
+                    ),
+                    Label(
+                        "I agree to the ",
+                        A("Terms of Service", href="#", cls="terms-link"),
+                        " and ",
+                        A("Privacy Policy", href="#", cls="terms-link"),
+                        for_="agreeTerms",
+                        cls="checkbox-label"
+                    ),
+                    cls="form-group checkbox-group"
+                ),
+                Div(
+                    errors if errors else "",
+                    id="signup-errors",
+                    cls="form-errors"
+                ),
+                cls="form-section"
             ),
             Button(
                 "Create Account",
                 type="submit",
-                cls="signup-submit terminal-button"
+                cls="signup-button"
             ),
             hx_post="/signup",
             hx_swap="outerHTML",
-            cls="signup-form terminal-form"
+            cls="signup-form"
         ),
-        P(
+        mobile_social_section,
+        Div(
             "Already have an account? ",
-            A("Log in", href="/login", cls="terminal-link"),
-            cls="signup-link-text terminal-text"
+            A("Sign in", href="/login", cls="signin-link"),
+            cls="signin-prompt"
         ),
-        cls="signup-card terminal-card"
+        cls="form-content"
+    )
+
+    # Desktop social content (only shown on desktop)
+    social_content = Div(
+        Div(
+            H2("Or continue with", cls="desktop-heading"),
+            Div(
+                Button(
+                    google_svg,
+                    "Google",
+                    type="button",
+                    cls="social-button google-button",
+                    onclick="handleGoogleSignUp()"
+                ),
+                Button(
+                    github_svg,
+                    "GitHub",
+                    type="button",
+                    cls="social-button github-button",
+                    onclick="handleGithubSignUp()"
+                ),
+                cls="social-logins"
+            ),
+            feature_highlights,
+            cls="social-content-inner"
+        ),
+        cls="social-content"
+    )
+
+    # Main container
+    return Div(Link(rel="stylesheet", href="/css/sign-up.css"),
+        css_link,
+        responsive_script,
+        Div(
+            form_content,
+            Div(cls="vertical-divider"),
+            social_content,
+            cls="form-wrapper"
+        ),
+        cls="container"
     )
 
 def error_message(error_text):
-    """Format error message with terminal style"""
+    """Format error message with modern style"""
     return Div(
-        P(f"ERROR: {error_text}", cls="error-text"),
-        cls="error-message terminal-error"
+        P(f"{error_text}", cls="error-text"),
+        cls="error-message"
     )
 
 @rt('/signup')
 def get():
-    """Render signup form with terminal aesthetics"""
+    """Render modern signup form"""
     return signup_form()
 
 @rt('/signup')
 def post(form: SignupForm, req):
     """Handle signup form submission and create Django user"""
-    # Form validation with terminal-style error messages
+    # Form validation with modern error messages
     errors = []
 
     # Validate email format
@@ -114,10 +338,6 @@ def post(form: SignupForm, req):
     # Check if email already exists
     if User.objects.filter(email=form.email).exists():
         errors.append(error_message("Email already registered."))
-
-    # Generate username from name if not provided
-    if not form.username:
-        form.username = form.name.lower().replace(" ", "_")
 
     # Check if username is available
     if User.objects.filter(username=form.username).exists():
@@ -131,23 +351,22 @@ def post(form: SignupForm, req):
         for error in e.messages:
             errors.append(error_message(error))
 
+    # Validate terms agreement
+    if not form.agree_terms:
+        errors.append(error_message("You must agree to the Terms of Service and Privacy Policy."))
+
     # Return form with errors if validation failed
     if errors:
         response = signup_form(errors)
         return response
-
-    # Split name into first and last name
-    name_parts = form.name.split(" ", 1)
-    first_name = name_parts[0]
-    last_name = name_parts[1] if len(name_parts) > 1 else ""
 
     # Create user through Django's auth system
     user = User.objects.create_user(
         username=form.username,
         email=form.email,
         password=form.password,
-        first_name=first_name,
-        last_name=last_name,
+        first_name=form.first_name,
+        last_name=form.last_name,
         ai_percentage=0
     )
 
@@ -161,8 +380,8 @@ def post(form: SignupForm, req):
     # Send verification email
     send_email_confirmation(req, user)
 
-    # Add a welcome toast
-    add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account.", "success")
+    # Add a welcome toast with improved messaging
+    add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account and unlock all features.", "success")
 
     # Redirect to verification sent page
     return RedirectResponse('/accounts/confirm-email/', status_code=303)
@@ -174,7 +393,7 @@ def login_form(error=None):
     # Create the form component - structured like the React version
     form = Form(
         Div(
-            Label("Email Address", htmlFor="email"),
+            Label("Email Address", for_="email"),
             Input(
                 type="email",
                 id="email",
@@ -186,7 +405,7 @@ def login_form(error=None):
             cls="form-group"
         ),
         Div(
-            Label("Password", htmlFor="password"),
+            Label("Password", for_="password"),
             Input(
                 type="password",
                 id="password",
@@ -220,12 +439,12 @@ def login_form(error=None):
     
     function handleGoogleLogin() {
         console.log("Logging in with Google");
-        // Add your Google login logic here
+        window.location.href = '/accounts/google/login/';
     }
-    
+
     function handleGithubLogin() {
         console.log("Logging in with GitHub");
-        // Add your GitHub login logic here
+        window.location.href = '/accounts/github/login/';
     }
     
     // Initial setup on page load
@@ -296,7 +515,7 @@ def login_form(error=None):
     # Mobile version of social login options
     mobile_social_section = Div(
         Div(
-            Span("OR"),
+            Span("OR CONTINUE WITH"),
             cls="divider"
         ),
         Div(
@@ -339,6 +558,21 @@ def login_form(error=None):
         Link(rel="stylesheet", href="/css/sign-in.css"),
         Div(
             Div(
+                A(
+                Svg(
+                    tag("path", d="M19 12H5", stroke="currentColor", stroke_width="2", stroke_linecap="round", stroke_linejoin="round"),
+                    tag("path", d="M12 19L5 12L12 5", stroke="currentColor", stroke_width="2", stroke_linecap="round", stroke_linejoin="round"),
+                    width="16",
+                    height="16",
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    xmlns="http://www.w3.org/2000/svg",
+                    cls="back-icon"
+                    ),
+                    "Back to Home",
+                    href="/",
+                    cls="back-link"
+                 ),
                 H1("Sign In to DeadDevelopers"),
                 form,
                 mobile_social_section,  # Only shown on mobile
@@ -391,7 +625,7 @@ def login_form(error=None):
 
 @rt('/login')
 def get():
-    """Render login form with terminal aesthetics"""
+    """Render modern login form"""
     return login_form()
 
 @rt('/login')
@@ -406,16 +640,16 @@ def post(email: str, password: str, req):
 
     # Check if email is verified
     try:
-        email_address = EmailAddress.objects.get(user=user, email=user.email)
+        email_address = EmailAddress.objects.get(user=user, email=email)
         if not email_address.verified:
             # Send a new verification email
             send_email_confirmation(req, user)
             return login_form("Email not verified. We've sent a new verification email to your address.")
     except EmailAddress.DoesNotExist:
         # Create an email address record if it doesn't exist
-        email_address = EmailAddress.objects.create(
+        EmailAddress.objects.create(
             user=user,
-            email=user.email,
+            email=email,
             primary=True,
             verified=False
         )
