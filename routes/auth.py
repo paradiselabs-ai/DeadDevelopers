@@ -672,7 +672,6 @@ def login_page(error=None):
         errors = [error_message(error)]
 
     return Titled(
-        "Log In - DeadDevelopers",
         Link(rel="stylesheet", href="/css/style.css"),
         login_form(errors)
     )
