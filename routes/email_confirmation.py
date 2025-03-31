@@ -40,12 +40,19 @@ def email_page_headers():
     ]
 
 # Email confirmation route
-@rt('/accounts/confirm-email/<key>')
+@rt('/accounts/confirm-email/{key:path}')
 def get(key: str):
     """Handle email confirmation GET request"""
     try:
         # Try to get the confirmation object
-        confirmation = EmailConfirmation.objects.get(key=key)
+        from urllib.parse import unquote
+        # URL decode the key
+        decoded_key = unquote(key)
+
+        # Debug output
+        print(f"Attempting to confirm email with key: {decoded_key}")
+
+        confirmation = EmailConfirmation.objects.get(key=decoded_key)
         email = confirmation.email_address.email
 
         # Return confirmation page
@@ -67,16 +74,25 @@ def get(key: str):
                 cls="container"
             )
         )
-    except ObjectDoesNotExist:
+    except ObjectDoesNotExist as e:
+        # Debug output
+        print(f"Email confirmation error: {str(e)}")
         # Handle invalid or expired key
         return email_confirmation_error("This confirmation link is invalid or has expired.")
 
-@rt('/accounts/confirm-email/<key>')
+@rt('/accounts/confirm-email/{key:path}')
 def post(key: str):
     """Handle email confirmation POST request"""
     try:
         # Try to get the confirmation object
-        confirmation = EmailConfirmation.objects.get(key=key)
+        from urllib.parse import unquote
+        # URL decode the key
+        decoded_key = unquote(key)
+
+        # Debug output
+        print(f"Confirming email with key: {decoded_key}")
+
+        confirmation = EmailConfirmation.objects.get(key=decoded_key)
 
         # Confirm the email
         confirmation.email_address.verified = True
@@ -100,7 +116,9 @@ def post(key: str):
                 cls="container"
             )
         )
-    except ObjectDoesNotExist:
+    except ObjectDoesNotExist as e:
+        # Debug output
+        print(f"Email confirmation error: {str(e)}")
         # Handle invalid or expired key
         return email_confirmation_error("This confirmation link is invalid or has expired.")
 
