@@ -10,30 +10,49 @@ from django.contrib import messages
 def add_toast(session, message, toast_type="info"):
     """
     Add a toast notification to the session with robust error handling.
-    
+
     Args:
         session: The session object to store the toast in
         message: The message to display in the toast
         toast_type: The type of toast (info, success, warning, error)
-        
+
     Returns:
         bool: True if toast was added successfully, False otherwise
     """
+    # Check if session is None or not a valid session object
+    if session is None:
+        print("Cannot add toast: Session is None")
+        return False
+
+    # Check if session is a dictionary-like object
+    if not hasattr(session, '__setitem__') or not hasattr(session, '__getitem__'):
+        print(f"Cannot add toast: Session is not a dictionary-like object: {type(session)}")
+        return False
+
     try:
         # Initialize toasts list if it doesn't exist
         if 'toasts' not in session:
             session['toasts'] = []
-            
+
         # Validate toast_type
         valid_types = ["info", "success", "warning", "error"]
         if toast_type not in valid_types:
             toast_type = "info"  # Default to info if invalid type
-            
+
         # Add toast to session
         session['toasts'].append({
             'message': str(message),
             'type': toast_type
         })
+
+        # Try to save the session if it has a save method
+        if hasattr(session, 'save'):
+            try:
+                session.save()
+            except Exception as save_error:
+                print(f"Warning: Could not save session after adding toast: {str(save_error)}")
+                # Continue anyway, as the toast might still work
+
         return True
     except Exception as e:
         # Log the error but don't crash the application
@@ -43,22 +62,44 @@ def add_toast(session, message, toast_type="info"):
 def get_toasts(session, clear=True):
     """
     Get all toast notifications from the session with error handling.
-    
+
     Args:
         session: The session object containing the toasts
         clear: Whether to clear the toasts after retrieving them
-        
+
     Returns:
         list: List of toast notifications or empty list if none or error
     """
+    # Check if session is None or not a valid session object
+    if session is None:
+        print("Cannot get toasts: Session is None")
+        return []
+
+    # Check if session is a dictionary-like object
+    if not hasattr(session, '__getitem__'):
+        print(f"Cannot get toasts: Session is not a dictionary-like object: {type(session)}")
+        return []
+
     try:
         # Get toasts from session
-        toasts = session.get('toasts', [])
-        
+        toasts = session.get('toasts', []) if hasattr(session, 'get') else []
+
         # Clear toasts if requested
-        if clear and 'toasts' in session:
-            session['toasts'] = []
-            
+        if clear and hasattr(session, '__setitem__') and 'toasts' in session:
+            try:
+                session['toasts'] = []
+
+                # Try to save the session if it has a save method
+                if hasattr(session, 'save'):
+                    try:
+                        session.save()
+                    except Exception as save_error:
+                        print(f"Warning: Could not save session after clearing toasts: {str(save_error)}")
+                        # Continue anyway, as we've already retrieved the toasts
+            except Exception as clear_error:
+                print(f"Warning: Could not clear toasts: {str(clear_error)}")
+                # Continue anyway, as we've already retrieved the toasts
+
         return toasts
     except Exception as e:
         # Log the error but don't crash the application
@@ -75,20 +116,29 @@ def setup_toasts(app):
         app: The FastHTML app to set up toasts for
     """
     try:
-        # Add middleware to handle toasts
-        @app.middleware('http')
+        # Add middleware to handle toasts - make it the last middleware to run
+        # so that session middleware has a chance to initialize first
+        @app.middleware('http')  # Use default priority
         def process_toasts(request, call_next):
             """Add toast notifications to the response if available"""
-            try:
-                # Process the request first
-                response = call_next(request)
+            # Process the request first - do this outside the try block
+            # to ensure the request is always processed
+            response = call_next(request)
 
-                # Skip if no session
+            try:
+                # Skip if no session attribute or if session middleware hasn't been initialized
                 if not hasattr(request, 'session'):
+                    # This is normal for static files and some other routes
                     return response
 
-                # Get toasts from session
-                toasts = get_toasts(request.session)
+                # Try to access session safely
+                try:
+                    # Get toasts from session
+                    toasts = get_toasts(request.session)
+                except Exception as session_error:
+                    # Log the error but continue with the response
+                    print(f"Error accessing session for toasts: {str(session_error)}")
+                    return response
 
                 # Skip if no toasts or response is not HTML
                 if not toasts or not hasattr(response, 'body'):

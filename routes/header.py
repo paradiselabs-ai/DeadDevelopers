@@ -405,16 +405,25 @@ nav_links = [
 
 # Header component
 def SiteHeader(current_path):
+    # Import the toast helper
+    from utils.toast_helper import render_toasts
+
     # Handle different types of input for current_path
     if isinstance(current_path, dict) and 'path' in current_path:
         # If it's a session dictionary with a path key
         path = current_path['path']
+        # We'll use the session for toasts
+        session = current_path
     elif isinstance(current_path, str):
         # If it's already a string path
         path = current_path
+        # No session available
+        session = None
     else:
         # Default fallback
         path = "/"
+        # No session available
+        session = None
         
     normalized_path = path.rstrip('/')
     
@@ -577,9 +586,14 @@ def SiteHeader(current_path):
     )
 
     
+    # Render toast notifications if session is available
+    toast_container = render_toasts(session) if session else None
+
     return Header(
         Style(header_css),
         Script(inline_js),
+        # Include toast container if available
+        toast_container,
         Nav(
             # Left section: Logo and menu button
             Div(

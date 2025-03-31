@@ -16,7 +16,11 @@ django.setup()
 from fasthtml.common import *
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
+from starlette.middleware import Middleware
 import time
+
+# Import our custom session middleware
+from middleware import CustomSessionMiddleware
 
 # Import Django models and functionality
 from django.contrib.auth import get_user_model
@@ -51,6 +55,18 @@ def auth_before(req, sess):
     # No auth in session, redirect to login
     return login_redir
 
+# Define middleware with our custom session middleware
+middleware = [
+    Middleware(
+        CustomSessionMiddleware,
+        secret_key="deaddevs-secret-key-change-in-production",
+        session_cookie="deaddevs_session",
+        max_age=14 * 24 * 60 * 60,  # 14 days in seconds
+        same_site="lax",
+        https_only=False
+    )
+]
+
 # Initialize FastHTML app with WebSocket support
 app, rt = fast_app(
     exts='ws',  # Enable WebSocket support
@@ -59,6 +75,7 @@ app, rt = fast_app(
     surreal=True,  # Enable Surreal.js for enhanced interactivity
     htmx=True,  # Enable HTMX for dynamic updates
     static_path=Path('static'),  # Set static files directory
+    middleware=middleware,  # Use our custom middleware
     before=Beforeware(
         auth_before,
         skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about', r'/accounts/confirm-email.*']
@@ -77,11 +94,8 @@ app, rt = fast_app(
     )
 )
 
-# Import our improved toast implementation
-from utils.toast import setup_toasts, add_toast
+# Import our simplified toast implementation
+from utils.toast_helper import add_toast
 
 # Make add_toast available globally
 globals()['add_toast'] = add_toast
-
-# Set up toast notifications with improved error handling
-setup_toasts(app)

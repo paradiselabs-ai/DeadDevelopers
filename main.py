@@ -12,6 +12,8 @@ from routes.about import *
 from routes.header import SiteHeader
 from routes.email_confirmation import *
 
+# We'll import toast setup at the end of the file
+
 # Landing page route
 @rt('/')
 def get(session):
@@ -413,6 +415,8 @@ def get(session):
             )
         )
     )
+
+# No need for toast setup - we'll use the direct approach
 
 # Run the server
 serve()

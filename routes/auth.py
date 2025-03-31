@@ -9,7 +9,7 @@ import re
 from fasthtml.svg import Svg, ft_svg as tag
 from allauth.account.utils import send_email_confirmation
 from allauth.account.models import EmailAddress
-from utils.toast import handle_session_safely, RequestWrapper
+from utils.toast_helper import RequestWrapper, handle_session_safely
 
 @dataclass
 class SignupForm:
@@ -324,8 +324,25 @@ def error_message(error_text):
     # Format error text to look like a terminal message
     formatted_text = error_text.strip()
 
+    # Add auto-hide script for error messages
+    auto_hide_script = """
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-hide this error message after 5 seconds
+        setTimeout(() => {
+            const errorMsg = document.querySelector('.error-message:last-child');
+            if (errorMsg) {
+                errorMsg.classList.add('fade-out');
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 300);
+            }
+        }, 5000);
+    });
+    """
+
     return Div(
         P(f"{formatted_text}", cls="error-text"),
+        Script(auto_hide_script),
         cls="error-message"
     )
 
