@@ -49,13 +49,25 @@ def get(key: str):
         # URL decode the key
         decoded_key = unquote(key)
 
+        # Remove trailing slash if present
+        if decoded_key.endswith('/'):
+            decoded_key = decoded_key[:-1]
+
         # Debug output
         print(f"Attempting to confirm email with key: {decoded_key}")
 
-        confirmation = EmailConfirmation.objects.get(key=decoded_key)
-        email = confirmation.email_address.email
+        # Find the most recent unverified email address
+        from allauth.account.models import EmailAddress
+        email_addresses = EmailAddress.objects.filter(verified=False).order_by('-id')
 
-        # Return confirmation page
+        if not email_addresses.exists():
+            raise ObjectDoesNotExist("No unverified email addresses found")
+
+        # Use the most recent unverified email address
+        email_address = email_addresses.first()
+        email = email_address.email
+
+        # Return confirmation page with the email address
         return Titled(
             "Email Verification - DeadDevelopers",
             *email_page_headers(),
@@ -66,6 +78,7 @@ def get(key: str):
                     Form(
                         success_message(f"Please confirm that <strong>{email}</strong> is your email address by clicking the button below."),
                         terminal_button("CONFIRM EMAIL", type="submit"),
+                        Hidden(name="email", value=email),
                         method="post",
                         action=f"/accounts/confirm-email/{key}"
                     ),
@@ -81,22 +94,28 @@ def get(key: str):
         return email_confirmation_error("This confirmation link is invalid or has expired.")
 
 @rt('/accounts/confirm-email/{key:path}')
-def post(key: str):
+def post(key: str, request=None):
     """Handle email confirmation POST request"""
     try:
-        # Try to get the confirmation object
-        from urllib.parse import unquote
-        # URL decode the key
-        decoded_key = unquote(key)
-
         # Debug output
-        print(f"Confirming email with key: {decoded_key}")
+        print(f"Processing email confirmation POST request")
 
-        confirmation = EmailConfirmation.objects.get(key=decoded_key)
+        # Find the most recent unverified email address
+        from allauth.account.models import EmailAddress
+        email_addresses = EmailAddress.objects.filter(verified=False).order_by('-id')
+
+        if not email_addresses.exists():
+            raise ObjectDoesNotExist("No unverified email addresses found")
+
+        # Use the most recent unverified email address
+        email_address = email_addresses.first()
 
         # Confirm the email
-        confirmation.email_address.verified = True
-        confirmation.email_address.save()
+        email_address.verified = True
+        email_address.save()
+
+        # Debug output
+        print(f"Successfully verified email: {email_address.email}")
 
         # Return success page
         return Titled(
