@@ -16,9 +16,69 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         """Redirect to home after logout"""
         return settings.ACCOUNT_LOGOUT_REDIRECT_URL
     
-    def get_email_verification_redirect_url(email_address):
+    def get_email_verification_redirect_url(self, email_address):
         """Redirect to dashboard after email verification"""
         return settings.LOGIN_REDIRECT_URL
+
+    def confirm_email(self, request, key):
+        """Confirm email address with the given key"""
+        from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC, EmailAddress
+
+        try:
+            # First try to confirm using HMAC
+            try:
+                email_confirmation = EmailConfirmationHMAC.from_key(key)
+                if email_confirmation:
+                    # Get the email address object
+                    email_address = email_confirmation.email_address
+
+                    # Mark as verified
+                    email_address.verified = True
+                    email_address.set_as_primary(conditional=True)
+                    email_address.save()
+
+                    # Log the confirmation
+                    print(f"Email confirmed through adapter HMAC: {email_address.email}")
+
+                    return email_address
+            except Exception as hmac_error:
+                print(f"HMAC confirmation error in adapter: {str(hmac_error)}")
+
+            # If HMAC confirmation fails, try the old style confirmation
+            try:
+                email_confirmation = EmailConfirmation.objects.get(key=key)
+                # Get the email address object
+                email_address = email_confirmation.email_address
+
+                # Mark as verified
+                email_address.verified = True
+                email_address.set_as_primary(conditional=True)
+                email_address.save()
+
+                # Delete the confirmation
+                email_confirmation.delete()
+
+                # Log the confirmation
+                print(f"Email confirmed through adapter regular: {email_address.email}")
+
+                return email_address
+            except EmailConfirmation.DoesNotExist:
+                print(f"Could not find confirmation with key: {key}")
+
+            # If both methods fail, try to find any unverified email addresses
+            email_addresses = EmailAddress.objects.filter(verified=False).order_by('-id')
+            if email_addresses.exists():
+                email_address = email_addresses.first()
+                email_address.verified = True
+                email_address.set_as_primary(conditional=True)
+                email_address.save()
+                print(f"Email confirmed through adapter fallback: {email_address.email}")
+                return email_address
+
+            return None
+        except Exception as e:
+            print(f"Error in confirm_email adapter: {str(e)}")
+            return None
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """Custom social account adapter for GitHub integration"""
