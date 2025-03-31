@@ -5,6 +5,8 @@ This module provides functions for creating and managing toast notifications
 with robust error handling to ensure session issues don't disrupt the user experience.
 """
 
+from django.contrib import messages
+
 def add_toast(session, message, toast_type="info"):
     """
     Add a toast notification to the session with robust error handling.
@@ -66,32 +68,44 @@ def get_toasts(session, clear=True):
 def setup_toasts(app):
     """
     Set up toast notifications for the FastHTML app.
-    
+
     This function adds middleware to the FastHTML app to handle toast notifications.
-    
+
     Args:
         app: The FastHTML app to set up toasts for
     """
     try:
-        # Import add_toast to make it available globally
-        app.add_global('add_toast', add_toast)
-        
         # Add middleware to handle toasts
-        @app.middleware('response')
-        def process_toasts(request, response):
+        @app.middleware('http')
+        def process_toasts(request, call_next):
             """Add toast notifications to the response if available"""
             try:
+                # Process the request first
+                response = call_next(request)
+
                 # Skip if no session
                 if not hasattr(request, 'session'):
                     return response
-                
+
                 # Get toasts from session
                 toasts = get_toasts(request.session)
-                
+
                 # Skip if no toasts or response is not HTML
-                if not toasts or not hasattr(response, 'html'):
+                if not toasts or not hasattr(response, 'body'):
                     return response
-                
+
+                # Only process HTML responses
+                content_type = response.headers.get('content-type', '')
+                if 'text/html' not in content_type:
+                    return response
+
+                # Get response body as string
+                body = response.body.decode('utf-8')
+
+                # Skip if no closing body tag
+                if '</body>' not in body:
+                    return response
+
                 # Create toast HTML
                 toast_html = ""
                 for toast in toasts:
@@ -103,7 +117,7 @@ def setup_toasts(app):
                         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
                     </div>
                     """
-                
+
                 # Create toast container and script
                 toast_container = f"""
                 <div class="toast-container">
@@ -135,11 +149,19 @@ def setup_toasts(app):
                     }});
                 </script>
                 """
-                
+
                 # Add toast container to response body
-                response.html = response.html.replace('</body>', f'{toast_container}</body>')
-                
-                return response
+                modified_body = body.replace('</body>', f'{toast_container}</body>')
+
+                # Create new response with modified body
+                from starlette.responses import HTMLResponse
+                new_response = HTMLResponse(
+                    content=modified_body,
+                    status_code=response.status_code,
+                    headers=dict(response.headers)
+                )
+
+                return new_response
             except Exception as e:
                 # Log the error but don't disrupt the response
                 print(f"Error processing toast notifications: {str(e)}")
@@ -147,6 +169,51 @@ def setup_toasts(app):
     except Exception as e:
         # Log the error during setup
         print(f"Error setting up toast notifications: {str(e)}")
+
+class RequestWrapper:
+    """
+    Wrapper for FastHTML request objects to provide Django-compatible methods.
+
+    This wrapper adds the build_absolute_uri method that Django expects but
+    FastHTML requests don't have, and handles Django messages.
+    """
+    def __init__(self, original_request):
+        self.original_request = original_request
+        # Django's message framework expects this
+        self._messages = messages.storage.default_storage(self)
+
+    def build_absolute_uri(self, path):
+        """Build an absolute URI from the given path."""
+        # Get the host from the original request
+        host = self.original_request.headers.get('host', 'localhost:8000')
+        scheme = 'https' if self.original_request.headers.get('x-forwarded-proto') == 'https' else 'http'
+        return f"{scheme}://{host}{path}"
+
+    # Django message framework compatibility
+    def is_secure(self):
+        """Check if the request is secure (HTTPS)."""
+        return self.original_request.headers.get('x-forwarded-proto') == 'https'
+
+    def get_host(self):
+        """Get the host from the request."""
+        return self.original_request.headers.get('host', 'localhost:8000')
+
+    @property
+    def session(self):
+        """Get the session from the original request."""
+        return self.original_request.session
+
+    @property
+    def META(self):
+        """Provide META dict that Django expects."""
+        meta = {}
+        for key, value in self.original_request.headers.items():
+            meta[f'HTTP_{key.upper().replace("-", "_")}'] = value
+        return meta
+
+    def __getattr__(self, name):
+        """Pass through any other attributes to the original request."""
+        return getattr(self.original_request, name)
 
 def handle_session_safely(session, action_func, default_value=None, log_prefix="Session operation"):
     """

@@ -78,7 +78,10 @@ app, rt = fast_app(
 )
 
 # Import our improved toast implementation
-from utils.toast import setup_toasts
+from utils.toast import setup_toasts, add_toast
+
+# Make add_toast available globally
+globals()['add_toast'] = add_toast
 
 # Set up toast notifications with improved error handling
 setup_toasts(app)

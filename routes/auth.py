@@ -9,7 +9,7 @@ import re
 from fasthtml.svg import Svg, ft_svg as tag
 from allauth.account.utils import send_email_confirmation
 from allauth.account.models import EmailAddress
-from utils.toast import handle_session_safely
+from utils.toast import handle_session_safely, RequestWrapper
 
 @dataclass
 class SignupForm:
@@ -456,7 +456,11 @@ def post(form: SignupForm, req):
         # Send verification email
         email_sent = False
         try:
-            send_email_confirmation(req, user)
+            # Wrap the request to provide build_absolute_uri method
+            wrapped_request = RequestWrapper(req)
+
+            # Send confirmation with wrapped request
+            send_email_confirmation(wrapped_request, user)
             email_sent = True
         except Exception as email_error:
             # Log the error for debugging
@@ -795,8 +799,11 @@ def post(email: str, password: str, req):
             email_address = EmailAddress.objects.get(user=user, email__iexact=email)
             if not email_address.verified:
                 try:
+                    # Wrap the request to provide build_absolute_uri method
+                    wrapped_request = RequestWrapper(req)
+
                     # Send a new verification email
-                    send_email_confirmation(req, user)
+                    send_email_confirmation(wrapped_request, user)
                     errors.append(error_message("Email not verified. We've sent a new verification email to your address."))
                 except Exception as e:
                     # Handle email sending errors
