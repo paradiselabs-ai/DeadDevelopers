@@ -1,6 +1,6 @@
 from fasthtml.common import *
 from dataclasses import dataclass
-from app import app, rt, User
+from app import app, rt, User, add_toast
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -9,6 +9,7 @@ import re
 from fasthtml.svg import Svg, ft_svg as tag
 from allauth.account.utils import send_email_confirmation
 from allauth.account.models import EmailAddress
+from utils.toast import handle_session_safely
 
 @dataclass
 class SignupForm:
@@ -328,6 +329,25 @@ def error_message(error_text):
         cls="error-message"
     )
 
+def handle_session_safely(session, action_func, default_value=None, log_prefix="Session operation"):
+    """
+    Safely handle session operations with proper error handling.
+
+    Args:
+        session: The session object to operate on
+        action_func: A function that performs the session operation
+        default_value: Value to return if operation fails
+        log_prefix: Prefix for error logging
+
+    Returns:
+        The result of action_func or default_value if an error occurs
+    """
+    try:
+        return action_func(session)
+    except Exception as e:
+        print(f"{log_prefix} error: {str(e)}")
+        return default_value
+
 def signup_page(errors=None):
     """Render the full signup page with the form and any errors"""
     # Ensure errors is properly formatted
@@ -350,68 +370,124 @@ def post(form: SignupForm, req):
     # Form validation with modern error messages
     errors = []
 
-    # Validate email format
-    if not re.match(r"[^@]+@[^@]+\.[^@]+", form.email):
-        errors.append(error_message("Invalid email format."))
-
-    # Check if email already exists
-    if User.objects.filter(email=form.email).exists():
-        errors.append(error_message("Email already registered."))
-
-    # Check if username is available
-    if User.objects.filter(username=form.username).exists():
-        errors.append(error_message("Username already taken."))
-
-    # Validate password strength
     try:
-        validate_password(form.password)
-    except ValidationError as e:
-        # Format Django's password validation errors
-        for error in e.messages:
-            errors.append(error_message(error))
-    except Exception as e:
-        # Handle any other validation errors
-        errors.append(error_message(str(e)))
+        # Validate email format
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", form.email):
+            errors.append(error_message("Invalid email format."))
 
-    # Validate terms agreement
-    if not form.agree_terms:
-        errors.append(error_message("You must agree to the Terms of Service and Privacy Policy."))
+        # Check if email already exists
+        try:
+            if User.objects.filter(email=form.email).exists():
+                errors.append(error_message("Email already registered."))
+        except Exception as db_error:
+            print(f"Database error checking email existence: {str(db_error)}")
+            errors.append(error_message("We couldn't verify if your email is available. Please try again."))
 
-    # Return form with errors if validation failed
-    if errors:
-        # Return the full signup page with errors
-        return signup_page(errors)
+        # Check if username is available
+        try:
+            if User.objects.filter(username=form.username).exists():
+                errors.append(error_message("Username already taken."))
+        except Exception as db_error:
+            print(f"Database error checking username existence: {str(db_error)}")
+            errors.append(error_message("We couldn't verify if your username is available. Please try again."))
 
-    try:
-        # Create user through Django's auth system
-        user = User.objects.create_user(
-            username=form.username,
-            email=form.email,
-            password=form.password,
-            first_name=form.first_name,
-            last_name=form.last_name,
-            ai_percentage=0
-        )
+        # Validate password strength
+        try:
+            validate_password(form.password)
+        except ValidationError as e:
+            # Format Django's password validation errors
+            for error in e.messages:
+                errors.append(error_message(error))
+        except Exception as e:
+            # Handle any other validation errors
+            print(f"Password validation error: {str(e)}")
+            errors.append(error_message("Password validation failed. Please ensure it meets security requirements."))
 
-        # Create EmailAddress record for the user (unverified)
-        email_address, created = EmailAddress.objects.get_or_create(
-            user=user,
-            email=form.email,
-            defaults={'primary': True, 'verified': False}
-        )
+        # Validate terms agreement
+        if not form.agree_terms:
+            errors.append(error_message("You must agree to the Terms of Service and Privacy Policy."))
+
+        # Return form with errors if validation failed
+        if errors:
+            # Return the full signup page with errors
+            return signup_page(errors)
+
+        # User creation process
+        try:
+            # Create user through Django's auth system
+            user = User.objects.create_user(
+                username=form.username,
+                email=form.email,
+                password=form.password,
+                first_name=form.first_name,
+                last_name=form.last_name,
+                ai_percentage=0
+            )
+        except Exception as user_error:
+            # Detailed error handling for user creation
+            error_message_text = "An error occurred during account creation."
+
+            if "UNIQUE constraint" in str(user_error) and "username" in str(user_error).lower():
+                error_message_text = "This username is already taken. Please choose another."
+            elif "UNIQUE constraint" in str(user_error) and "email" in str(user_error).lower():
+                error_message_text = "This email is already registered. Please use another email or try to log in."
+            else:
+                # Log the detailed error for debugging
+                print(f"User creation error: {str(user_error)}")
+
+            errors.append(error_message(error_message_text))
+            return signup_page(errors)
+
+        # Email verification setup
+        try:
+            # Create EmailAddress record for the user (unverified)
+            email_address, created = EmailAddress.objects.get_or_create(
+                user=user,
+                email=form.email,
+                defaults={'primary': True, 'verified': False}
+            )
+        except Exception as email_record_error:
+            # Log the error but continue - this is recoverable
+            print(f"Error creating email address record: {str(email_record_error)}")
+            # We'll still try to send the verification email
 
         # Send verification email
-        send_email_confirmation(req, user)
+        email_sent = False
+        try:
+            send_email_confirmation(req, user)
+            email_sent = True
+        except Exception as email_error:
+            # Log the error for debugging
+            print(f"Error sending verification email: {str(email_error)}")
+            # We'll handle this in the toast message
 
-        # Add a welcome toast with improved messaging
-        add_toast(req.session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account and unlock all features.", "success")
+        # Add appropriate toast message based on email sending success using our safer helper
+        if email_sent:
+            handle_session_safely(
+                req.session,
+                lambda session: add_toast(session, f"Welcome, {user.get_display_name()}! Please check your email to verify your account and unlock all features.", "success"),
+                None,  # Default return value (None) if operation fails
+                "Signup success toast with email verification"
+            )
+        else:
+            handle_session_safely(
+                req.session,
+                lambda session: add_toast(session, f"Welcome, {user.get_display_name()}! We couldn't send a verification email right now. Please try requesting one from your profile later.", "warning"),
+                None,  # Default return value (None) if operation fails
+                "Signup warning toast for email verification failure"
+            )
 
-        # Redirect to verification sent page
-        return RedirectResponse('/accounts/confirm-email/', status_code=303)
+        # Redirect to verification sent page or dashboard based on email sending success
+        if email_sent:
+            return RedirectResponse('/accounts/confirm-email/', status_code=303)
+        else:
+            # If email wasn't sent, redirect to dashboard with a warning
+            return RedirectResponse('/dashboard', status_code=303)
 
     except Exception as e:
-        # Handle any unexpected errors during user creation
-        errors.append(error_message(f"An error occurred during registration: {str(e)}"))
+        # Handle any unexpected errors during the entire registration process
+        print(f"Unexpected error during registration: {str(e)}")
+        errors.append(error_message("An unexpected error occurred during registration. Please try again later."))
         return signup_page(errors)
 
 def login_form(error=None):
@@ -684,71 +760,150 @@ def get():
 @rt('/login')
 def post(email: str, password: str, req):
     """Handle login form submission and authenticate Django user"""
-    # Attempt to authenticate user
-    user = authenticate(username=email, password=password)
-
     # Create a list for errors
     errors = []
 
-    # If authentication fails, return login page with error
-    if not user:
-        errors.append(error_message("Invalid email or password"))
-        return login_page(errors)
-
-    # Check if email is verified
     try:
-        email_address = EmailAddress.objects.get(user=user, email=email)
-        if not email_address.verified:
-            # Send a new verification email
-            send_email_confirmation(req, user)
-            errors.append(error_message("Email not verified. We've sent a new verification email to your address."))
+        # Attempt to authenticate user
+        user = authenticate(username=email, password=password)
+
+        # If authentication fails, return login page with error
+        if not user:
+            errors.append(error_message("Invalid email or password"))
             return login_page(errors)
-    except EmailAddress.DoesNotExist:
-        # Create an email address record if it doesn't exist
-        EmailAddress.objects.create(
-            user=user,
-            email=email,
-            primary=True,
-            verified=False
+
+        # Check if email is verified
+        try:
+            email_address = EmailAddress.objects.get(user=user, email=email)
+            if not email_address.verified:
+                try:
+                    # Send a new verification email
+                    send_email_confirmation(req, user)
+                    errors.append(error_message("Email not verified. We've sent a new verification email to your address."))
+                except Exception as e:
+                    # Handle email sending errors
+                    print(f"Error sending verification email: {str(e)}")
+                    errors.append(error_message("Email not verified. We tried to send a verification email but encountered an error. Please try again later."))
+                return login_page(errors)
+        except EmailAddress.DoesNotExist:
+            # Create an email address record if it doesn't exist
+            try:
+                EmailAddress.objects.create(
+                    user=user,
+                    email=email,
+                    primary=True,
+                    verified=False
+                )
+                # Send verification email
+                try:
+                    send_email_confirmation(req, user)
+                    errors.append(error_message("Email not verified. We've sent a verification email to your address."))
+                except Exception as e:
+                    # Handle email sending errors
+                    print(f"Error sending verification email: {str(e)}")
+                    errors.append(error_message("Email not verified. We tried to send a verification email but encountered an error. Please try again later."))
+            except Exception as e:
+                # Handle email address creation errors
+                print(f"Error creating email address record: {str(e)}")
+                errors.append(error_message("An error occurred while processing your account. Please contact support."))
+            return login_page(errors)
+
+        # Helper function to set session data
+        def set_session_data(session, user):
+            session['auth'] = user.username
+            session['user'] = {
+                'name': user.get_display_name(),
+                'email': user.email,
+                'ai_percentage': user.ai_percentage
+            }
+            return True  # Return value indicating success
+
+        # Set session data for FastHTML access using our safer helper
+        session_updated = handle_session_safely(
+            req.session,
+            lambda session: set_session_data(session, user),
+            False,  # Default return value (False) if operation fails
+            "Login session update"
         )
-        # Send verification email
-        send_email_confirmation(req, user)
-        errors.append(error_message("Email not verified. We've sent a verification email to your address."))
+
+        if not session_updated:
+            errors.append(error_message("Login successful, but we encountered an issue with your session. You may need to log in again."))
+            return login_page(errors)
+
+        # Add welcome back toast using our safer helper
+        handle_session_safely(
+            req.session,
+            lambda session: add_toast(session, f"Welcome back, {user.get_display_name()}!", "success"),
+            None,  # Default return value (None) if operation fails
+            "Login toast notification"
+        )
+
+        # Redirect to dashboard
+        return RedirectResponse('/dashboard', status_code=303)
+
+    except Exception as e:
+        # Catch any other unexpected errors during the login process
+        print(f"Unexpected error during login: {str(e)}")
+        errors.append(error_message("An unexpected error occurred. Please try again later."))
         return login_page(errors)
-
-    # Set session data for FastHTML access instead of using Django login
-    req.session['auth'] = user.username
-    req.session['user'] = {
-        'name': user.get_display_name(),
-        'email': user.email,
-        'ai_percentage': user.ai_percentage
-    }
-
-    # Add welcome back toast
-    add_toast(req.session, f"Welcome back, {user.get_display_name()}!", "success")
-
-    # Redirect to dashboard
-    return RedirectResponse('/dashboard', status_code=303)
 
 @rt('/logout')
 def get(req):
     """Log user out of both Django and FastHTML sessions"""
-    # Clear FastHTML session first
-    if 'auth' in req.session:
-        del req.session['auth']
-    if 'user' in req.session:
-        del req.session['user']
-    
+    # Track if we had any issues during logout
+    had_session_issues = False
+
+    # Helper function to clear FastHTML session
+    def clear_fasthtml_session(session):
+        if 'auth' in session:
+            del session['auth']
+        if 'user' in session:
+            del session['user']
+        return True
+
+    # Helper function to handle Django logout
+    def do_django_logout(request):
+        logout(request)
+        return True
+
+    # Clear FastHTML session first using our safer helper
+    fasthtml_session_cleared = handle_session_safely(
+        req.session,
+        clear_fasthtml_session,
+        False,  # Default return value (False) if operation fails
+        "FastHTML session clearing during logout"
+    )
+
+    if not fasthtml_session_cleared:
+        had_session_issues = True
+
     # Clear Django session if available
-    try:
-        logout(req)
-    except Exception:
-        # Ignore Django session errors in FastHTML context
-        pass
-    
-    # Add logout toast
-    add_toast(req.session, "You've been logged out successfully.", "info")
-    
+    django_logout_success = handle_session_safely(
+        req,
+        do_django_logout,
+        False,  # Default return value (False) if operation fails
+        "Django logout"
+    )
+
+    if not django_logout_success:
+        had_session_issues = True
+
+    # Add appropriate logout toast based on whether there were issues
+    if had_session_issues:
+        handle_session_safely(
+            req.session,
+            lambda session: add_toast(session, "You've been logged out, but we encountered some session issues. If you experience any problems, please clear your browser cookies.", "warning"),
+            None,  # Default return value (None) if operation fails
+            "Logout warning toast"
+        )
+    else:
+        handle_session_safely(
+            req.session,
+            lambda session: add_toast(session, "You've been logged out successfully.", "info"),
+            None,  # Default return value (None) if operation fails
+            "Logout success toast"
+        )
+
     # Redirect to home page with explicit 303 status code
     return RedirectResponse('/', status_code=303)
 
@@ -1023,53 +1178,144 @@ def get(req):
     return edit_form
 
 @rt('/profile/update')
-def post(req, username: str, email: str, first_name: str, last_name: str, 
-         bio: str = "", github_username: str = "", twitter_username: str = "", 
+def post(req, username: str, email: str, first_name: str, last_name: str,
+         bio: str = "", github_username: str = "", twitter_username: str = "",
          website: str = "", theme_preference: str = "dark"):
     """Update user profile in Django"""
     if not req.user.is_authenticated:
         return RedirectResponse('/login', status_code=303)
-    
+
     user = req.user
     errors = []
-    
-    # Validate username change
-    if username != user.username and User.objects.filter(username=username).exists():
-        errors.append(error_message("Username already taken."))
-    
-    # Validate email change
-    if email != user.email and User.objects.filter(email=email).exists():
-        errors.append(error_message("Email already registered."))
-    
-    # Return form with errors if validation failed
-    if errors:
-        # Get the edit form and insert errors
-        response = get(req)
-        response.find("#profile-errors").content = errors
-        return response
-    
-    # Update user fields
-    user.username = username
-    user.email = email
-    user.first_name = first_name
-    user.last_name = last_name
-    user.bio = bio
-    user.github_username = github_username
-    user.twitter_username = twitter_username
-    user.website = website
-    user.theme_preference = theme_preference
-    user.save()
-    
-    # Update session data
-    req.session['auth'] = user.username
-    req.session['user'] = {
-        'name': user.get_display_name(),
-        'email': user.email,
-        'ai_percentage': user.ai_percentage
-    }
-    
-    # Add success message
-    add_toast(req.session, "Profile updated successfully!", "success")
-    
-    # Redirect to profile view
-    return get(req)
+
+    try:
+        # Validate username change
+        try:
+            if username != user.username and User.objects.filter(username=username).exists():
+                errors.append(error_message("Username already taken."))
+        except Exception as db_error:
+            print(f"Database error checking username existence: {str(db_error)}")
+            errors.append(error_message("We couldn't verify if your username is available. Please try again."))
+
+        # Validate email change
+        try:
+            if email != user.email and User.objects.filter(email=email).exists():
+                errors.append(error_message("Email already registered."))
+        except Exception as db_error:
+            print(f"Database error checking email existence: {str(db_error)}")
+            errors.append(error_message("We couldn't verify if your email is available. Please try again."))
+
+        # Validate URL format if provided
+        if website and not website.startswith(('http://', 'https://')):
+            website = f"https://{website}"
+
+        # Return form with errors if validation failed
+        if errors:
+            # Get the edit form and insert errors
+            try:
+                response = get(req)
+                response.find("#profile-errors").content = errors
+                return response
+            except Exception as form_error:
+                print(f"Error generating edit form with errors: {str(form_error)}")
+                # Fallback to a simple error message if form generation fails
+                return RedirectResponse('/profile', status_code=303)
+
+        # Update user fields
+        try:
+            original_username = user.username
+            user.username = username
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.bio = bio
+            user.github_username = github_username
+            user.twitter_username = twitter_username
+            user.website = website
+            user.theme_preference = theme_preference
+            user.save()
+        except Exception as save_error:
+            print(f"Error saving user profile: {str(save_error)}")
+
+            # Check for specific database errors
+            error_message_text = "An error occurred while saving your profile."
+            if "UNIQUE constraint" in str(save_error) and "username" in str(save_error).lower():
+                error_message_text = "This username is already taken. Please choose another."
+            elif "UNIQUE constraint" in str(save_error) and "email" in str(save_error).lower():
+                error_message_text = "This email is already registered. Please use another email."
+
+            errors.append(error_message(error_message_text))
+            response = get(req)
+            response.find("#profile-errors").content = errors
+            return response
+
+        # Helper function to update session data
+        def update_session_data(session):
+            session['auth'] = user.username
+            session['user'] = {
+                'name': user.get_display_name(),
+                'email': user.email,
+                'ai_percentage': user.ai_percentage
+            }
+            return True
+
+        # Helper function to revert username
+        def revert_username(user_obj):
+            user_obj.username = original_username
+            user_obj.save()
+            return True
+
+        # Update session data using our safer helper
+        session_updated = handle_session_safely(
+            req.session,
+            update_session_data,
+            False,  # Default return value (False) if operation fails
+            "Profile update session update"
+        )
+
+        # If username changed but session update failed, this could cause login issues
+        # Try to revert the username change to maintain session consistency
+        if not session_updated and original_username != username:
+            username_reverted = handle_session_safely(
+                user,
+                revert_username,
+                False,  # Default return value (False) if operation fails
+                "Username reversion after session update failure"
+            )
+
+            if username_reverted:
+                errors.append(error_message("We couldn't update your username due to session issues. Other changes were saved."))
+                response = get(req)
+                response.find("#profile-errors").content = errors
+                return response
+
+        # Add appropriate success/warning message using our safer helper
+        if session_updated:
+            handle_session_safely(
+                req.session,
+                lambda session: add_toast(session, "Profile updated successfully!", "success"),
+                None,  # Default return value (None) if operation fails
+                "Profile update success toast"
+            )
+        else:
+            handle_session_safely(
+                req.session,
+                lambda session: add_toast(session, "Profile updated, but we encountered session issues. You may need to log in again.", "warning"),
+                None,  # Default return value (None) if operation fails
+                "Profile update warning toast"
+            )
+
+        # Redirect to profile view
+        return get(req)
+
+    except Exception as e:
+        # Handle any unexpected errors during the entire update process
+        print(f"Unexpected error during profile update: {str(e)}")
+        try:
+            errors.append(error_message("An unexpected error occurred. Some changes may not have been saved."))
+            response = get(req)
+            response.find("#profile-errors").content = errors
+            return response
+        except Exception:
+            # Last resort fallback if everything else fails
+            return RedirectResponse('/profile', status_code=303)

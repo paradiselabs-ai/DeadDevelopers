@@ -77,5 +77,8 @@ app, rt = fast_app(
     )
 )
 
-# Set up toast notifications
+# Import our improved toast implementation
+from utils.toast import setup_toasts
+
+# Set up toast notifications with improved error handling
 setup_toasts(app)
