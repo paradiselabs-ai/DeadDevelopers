@@ -1641,3 +1641,24 @@ body {
         padding: 2rem 1rem;
     }
 }
+
+/* Error message and toast animations */
+.error-message {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.error-message.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.toast {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-hide {
+    opacity: 0;
+    transform: translateY(-10px);
+}

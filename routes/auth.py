@@ -375,9 +375,9 @@ def post(form: SignupForm, req):
         if not re.match(r"[^@]+@[^@]+\.[^@]+", form.email):
             errors.append(error_message("Invalid email format."))
 
-        # Check if email already exists
+        # Check if email already exists (case-insensitive)
         try:
-            if User.objects.filter(email=form.email).exists():
+            if User.objects.filter(email__iexact=form.email).exists():
                 errors.append(error_message("Email already registered."))
         except Exception as db_error:
             print(f"Database error checking email existence: {str(db_error)}")
@@ -415,9 +415,10 @@ def post(form: SignupForm, req):
         # User creation process
         try:
             # Create user through Django's auth system
+            # Store email in lowercase for consistency
             user = User.objects.create_user(
                 username=form.username,
-                email=form.email,
+                email=form.email.lower(),  # Always store email in lowercase
                 password=form.password,
                 first_name=form.first_name,
                 last_name=form.last_name,
@@ -441,9 +442,10 @@ def post(form: SignupForm, req):
         # Email verification setup
         try:
             # Create EmailAddress record for the user (unverified)
+            # Use the email from the user object (already lowercase)
             email_address, created = EmailAddress.objects.get_or_create(
                 user=user,
-                email=form.email,
+                email=user.email,  # Use the email from the user object (already lowercase)
                 defaults={'primary': True, 'verified': False}
             )
         except Exception as email_record_error:
@@ -764,17 +766,33 @@ def post(email: str, password: str, req):
     errors = []
 
     try:
-        # Attempt to authenticate user
-        user = authenticate(username=email, password=password)
+        # Try to find user by email (case-insensitive)
+        try:
+            # First try exact match
+            user = authenticate(username=email, password=password)
+
+            # If that fails, try case-insensitive match
+            if not user:
+                # Find user with case-insensitive email match
+                try:
+                    matching_user = User.objects.get(email__iexact=email)
+                    # Authenticate with the correct case of email
+                    user = authenticate(username=matching_user.email, password=password)
+                except (User.DoesNotExist, User.MultipleObjectsReturned):
+                    user = None
+        except Exception as auth_error:
+            print(f"Authentication error: {str(auth_error)}")
+            user = None
 
         # If authentication fails, return login page with error
         if not user:
             errors.append(error_message("Invalid email or password"))
             return login_page(errors)
 
-        # Check if email is verified
+        # Check if email is verified (case-insensitive)
         try:
-            email_address = EmailAddress.objects.get(user=user, email=email)
+            # Get the email address record for this user (case-insensitive)
+            email_address = EmailAddress.objects.get(user=user, email__iexact=email)
             if not email_address.verified:
                 try:
                     # Send a new verification email
@@ -788,9 +806,10 @@ def post(email: str, password: str, req):
         except EmailAddress.DoesNotExist:
             # Create an email address record if it doesn't exist
             try:
+                # Always store email in lowercase for consistency
                 EmailAddress.objects.create(
                     user=user,
-                    email=email,
+                    email=user.email,  # Use the email from the user object (already lowercase)
                     primary=True,
                     verified=False
                 )
@@ -1197,9 +1216,10 @@ def post(req, username: str, email: str, first_name: str, last_name: str,
             print(f"Database error checking username existence: {str(db_error)}")
             errors.append(error_message("We couldn't verify if your username is available. Please try again."))
 
-        # Validate email change
+        # Validate email change (case-insensitive)
         try:
-            if email != user.email and User.objects.filter(email=email).exists():
+            # Case-insensitive comparison
+            if email.lower() != user.email.lower() and User.objects.filter(email__iexact=email).exists():
                 errors.append(error_message("Email already registered."))
         except Exception as db_error:
             print(f"Database error checking email existence: {str(db_error)}")
@@ -1225,7 +1245,7 @@ def post(req, username: str, email: str, first_name: str, last_name: str,
         try:
             original_username = user.username
             user.username = username
-            user.email = email
+            user.email = email.lower()  # Always store email in lowercase
             user.first_name = first_name
             user.last_name = last_name
             user.bio = bio

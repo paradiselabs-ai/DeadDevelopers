@@ -121,6 +121,17 @@ def setup_toasts(app):
                                 }}, 300);
                             }}, 5000);
                         }});
+
+                        // Also auto-hide error messages after 5 seconds
+                        const errorMessages = document.querySelectorAll('.error-message');
+                        errorMessages.forEach(errorMsg => {{
+                            setTimeout(() => {{
+                                errorMsg.classList.add('fade-out');
+                                setTimeout(() => {{
+                                    errorMsg.style.display = 'none';
+                                }}, 300);
+                            }}, 5000);
+                        }});
                     }});
                 </script>
                 """
