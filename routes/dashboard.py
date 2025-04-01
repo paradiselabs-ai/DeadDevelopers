@@ -222,7 +222,7 @@ def ArrowIcon():
     return Svg(
         tag("line", x1="7", y1="17", x2="17", y2="7"),
         tag("polyline", points="7 7 17 7 17 17"),
-        viewBox="0 0 24 24", width="14", height="14", stroke="currentColor",
+        viewBox="0 0 24 24", width="18", height="18", stroke="currentColor",
         strokeWidth="2", fill="none"
     )
 
@@ -734,7 +734,7 @@ def dashboard(session):
                                         P("2 minutes ago", cls="notification-time"),
                                         cls="notification-content"
                                     ),
-                                    cls="notification-item"
+                                    cls="notification-item flex items-center"
                                 ),
                                 Div(
                                     Div(
@@ -749,7 +749,7 @@ def dashboard(session):
                                         P("1 hour ago", cls="notification-time"),
                                         cls="notification-content"
                                     ),
-                                    cls="notification-item"
+                                    cls="notification-item flex items-center"
                                 ),
                                 Div(
                                     Div(
@@ -765,7 +765,7 @@ def dashboard(session):
                                         P("Yesterday", cls="notification-time"),
                                         cls="notification-content"
                                     ),
-                                    cls="notification-item"
+                                    cls="notification-item flex items-center"
                                 ),
                                 cls="notification-list"
                             ),
@@ -774,6 +774,7 @@ def dashboard(session):
                                 cls="notification-footer"
                             ),
                             cls="notification-dropdown",
+                            id="notification-dropdown",
                             style="display: none;"
                         ),
                         cls="notification-container"
@@ -782,12 +783,20 @@ def dashboard(session):
                     Div(
                         Button(
                             Div(
-                                Img(src="/placeholder.svg?height=32&width=32", alt="Profile", crossOrigin="anonymous"),
-                                cls="avatar"
+                                Img(src="/placeholder.svg?height=32&width=32", 
+                                    alt="Profile", 
+                                    crossorigin="anonymous", 
+                                    cls="avatar"
+                                ),
+                                cls="avatar-container"
                             ),
                             Span("DeadDev_42", cls="username"),
                             cls="user-menu-button",
-                            id="user-menu-button"
+                            id="user-menu-button",
+                            # Adding HTMX attributes for dropdown toggle
+                            hx_get="/user-menu",
+                            hx_target="#user-dropdown",
+                            hx_swap="innerHTML"
                         ),
                         
                         # User Dropdown
@@ -804,7 +813,8 @@ def dashboard(session):
                                         "Edit Profile",
                                         href="#",
                                         cls="user-dropdown-item"
-                                    )
+                                    ),
+                                    style="list-style: none;"
                                 ),
                                 Li(
                                     A(
@@ -812,7 +822,8 @@ def dashboard(session):
                                         "Billing",
                                         href="#",
                                         cls="user-dropdown-item"
-                                    )
+                                    ),
+                                    style="list-style: none;"
                                 ),
                                 Li(
                                     A(
@@ -820,7 +831,8 @@ def dashboard(session):
                                         "Security",
                                         href="#",
                                         cls="user-dropdown-item"
-                                    )
+                                    ),
+                                    style="list-style: none;"
                                 ),
                                 Li(
                                     A(
@@ -829,12 +841,14 @@ def dashboard(session):
                                         href="#",
                                         cls="user-dropdown-item"
                                     ),
-                                    cls="dropdown-divider"
+                                    cls="dropdown-divider",
+                                    style="list-style: none;"
                                 ),
                                 cls="user-dropdown-menu"
                             ),
                             cls="user-dropdown",
-                            style="display: none;"
+                            id="user-dropdown",
+                            style="display: none;"  # Consider handling visibility with CSS/JS instead
                         ),
                         cls="user-menu-container"
                     ),
@@ -849,7 +863,7 @@ def dashboard(session):
                 Div(
                     Div(
                         Div(
-                            Img(src="/placeholder.svg?height=48&width=48", alt="Profile", crossOrigin="anonymous"),
+                            Img(src="/placeholder.svg?height=48&width=48", alt="Profile", crossorigin="anonymous"),
                             cls="profile-avatar"
                         ),
                         Div(
