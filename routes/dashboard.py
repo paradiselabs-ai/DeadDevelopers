@@ -1296,7 +1296,7 @@ def dashboard(session):
             ),
             cls="main-content"
         ),
-        cls="dashboard-container"
+        cls="dashboard-container dashboard-page"
     )
 
 # Route for handling state updates
