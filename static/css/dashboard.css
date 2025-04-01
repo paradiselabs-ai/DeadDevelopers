@@ -8,11 +8,11 @@
   --border-color: #333;
   --border-hover: #444;
   --accent: #00ff00;
-  --accent-hover: #33ff33;
+  --accent-hover: #00ff00c8;
   --accent-bg: rgba(0, 255, 0, 0.1);
   --accent-bg-hover: rgba(0, 255, 0, 0.2);
   --text-muted: rgba(255, 255, 255, 0.7);
-  --text-dimmed: rgba(255, 255, 255, 0.5);
+  --text-dimmed: rgba(255, 255, 255, 0.6);
   --python-color: #3572a5;
   --javascript-color: #f0db4f;
   --git-color: #f05032;
@@ -297,19 +297,27 @@
   background-color: rgba(51, 51, 51, 0.3);
 }
 
+.dashboard-page .menu-button:focus {
+  outline: none;
+  box-shadow: none; 
+}
+
 .dashboard-page .search-container {
   position: relative;
   width: 100%;
   max-width: 24rem;
+  display: flex; /* Added to ensure proper alignment of children */
+  align-items: center; /* Vertically center the icon and input */
 }
 
 .dashboard-page .search-icon {
   position: absolute;
   left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 15%;
+  transform: translateY(-15%);
   color: var(--text-dimmed);
   pointer-events: none;
+  z-index: 1; /* Ensure icon stays above input background */
 }
 
 .dashboard-page .search-input {
@@ -322,6 +330,9 @@
   transition: var(--transition-normal);
   outline: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem; /* Adjusted left padding for icon overlap */
+  height: 2.25rem; /* Added explicit height for consistency */
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 .dashboard-page .search-input:focus {
@@ -420,6 +431,11 @@
 
 .dashboard-page .mark-read-button:hover {
   color: var(--accent-hover);
+}
+
+.dashboard-page .mark-read-button:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 .dashboard-page .notification-list {
@@ -706,6 +722,11 @@
   background-color: var(--hover-bg);
 }
 
+.dashboard-page .btn-secondary:focus {
+  outline: none;
+  box-shadow: none; 
+}
+
 .dashboard-page .btn-primary {
   background-color: transparent;
   border-color: var(--accent);
@@ -714,6 +735,11 @@
 
 .dashboard-page .btn-primary:hover {
   background-color: var(--accent-bg);
+}
+
+.dashboard-page .btn-primary:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 /* Metrics Cards */
@@ -811,6 +837,11 @@
 
 .dashboard-page .view-all-link:hover {
   color: var(--accent-hover);
+}
+
+.dashboard-page .view-all-link:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 /* Projects Grid */
@@ -962,6 +993,11 @@
 .dashboard-page .project-menu:hover {
   color: var(--foreground);
   background-color: var(--hover-bg);
+}
+
+.dashboard-page .project-menu:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 /* Three Column Grid */
@@ -1125,6 +1161,11 @@
   color: var(--accent-hover);
 }
 
+.dashboard-page .connect-button:focus {
+  outline: none;
+  box-shadow: none; 
+}
+
 /* Contribution Graph */
 .dashboard-page .contribution-graph {
   height: 9.375rem;
@@ -1191,6 +1232,11 @@
 
 .dashboard-page .upgrade-button:hover {
   background-color: var(--accent-bg);
+}
+
+.dashboard-page .upgrade-button:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 /* Activity Feed */
@@ -1276,6 +1322,11 @@
 
 .dashboard-page .add-task-button:hover {
   color: var(--accent-hover);
+}
+
+.dashboard-page .add-task-button:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 .dashboard-page .tasks-list {

@@ -265,8 +265,8 @@ def DotsIcon():
         tag("circle", cx="12", cy="12", r="1"),
         tag("circle", cx="19", cy="12", r="1"),
         tag("circle", cx="5", cy="12", r="1"),
-        viewBox="0 0 24 24", width="18", height="18", stroke="currentColor",
-        strokeWidth="2", fill="none"
+        viewBox="0 0 24 24", width="20", height="20", stroke="currentColor",
+        strokeWidth="2", fill="currentColor"
     )
 
 def CalendarIcon():
