@@ -8,7 +8,34 @@ from datetime import datetime, timedelta
 from app import rt, app
 
 # Create dashboard-specific headers
-dashboard_css = Link(rel='stylesheet', href='\css\dashboard.css', type='text/css')
+dashboard_css = Link(rel='stylesheet', href='/css/dashboard.css', type='text/css')
+
+# Add inline styles for scrollbar to ensure they apply
+scrollbar_styles = Style("""
+    /* Ensure scrollbar styles apply globally */
+    html, body {
+        scrollbar-width: thin; /* For Firefox */
+        scrollbar-color: #333 #1e1e1e; /* For Firefox */
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #1e1e1e !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #444 !important;
+    }
+""")
 
 # Helper functions for generating data
 def generate_random_contribution_data():
@@ -560,7 +587,7 @@ def dashboard(session):
     """
     
     # Create the dashboard UI
-    return Title("Dashboard - DeadDevHub"), dashboard_css, Script(toggle_js), Div(
+    return Title("Dashboard - DeadDevHub"), dashboard_css, scrollbar_styles, Script(toggle_js), Div(
         # Overlay when sidebar is open
         Div(cls=f"sidebar-overlay {'active' if sidebar_open and is_mobile else ''}", id="sidebar-overlay"),
         
