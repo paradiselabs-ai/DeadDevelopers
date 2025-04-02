@@ -280,6 +280,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding-top: 1rem;
 }
 
 .dashboard-page .menu-button {
@@ -635,7 +636,7 @@
 
 @media (max-width: 768px) {
 .dashboard-page .dashboard-main {
-    padding-left: 1.5rem;
+    padding-left: 2rem;
   }
 }
 
@@ -855,6 +856,13 @@
 @media (min-width: 768px) {
 .dashboard-page .projects-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-page .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    padding-left: 8rem; 
   }
 }
 
