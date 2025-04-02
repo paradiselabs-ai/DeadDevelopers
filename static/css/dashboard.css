@@ -104,7 +104,7 @@
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
   z-index: 20;
   transition: var(--transition-normal);
   opacity: 0;
@@ -118,25 +118,25 @@
 
 .dashboard-page .sidebar-header {
   padding: 1rem;
+  padding-bottom: 1.2rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center; /* Vertically center children (logo and toggle) */
+  justify-content: space-between; /* Keep logo on left, toggle on right */
+}
+
+.dashboard-page .sidebar-content {
+  display: inline; /* Ensure the wrapper div doesn't disrupt flex alignment */
 }
 
 .dashboard-page .logo {
   font-weight: bold;
   font-size: 1.25rem;
+  margin: 0; /* Remove default H1 margins to align precisely */
 }
 
 .dashboard-page .logo-accent {
   color: var(--accent);
-}
-
-.dashboard-page .logo-icon {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 1.25rem;
 }
 
 .dashboard-page .sidebar-toggle {
@@ -144,6 +144,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  margin-left: 0.6rem;
   padding: 0.25rem;
   border-radius: 0.375rem;
   transition: var(--transition-normal);
@@ -154,17 +155,26 @@
   background-color: rgba(51, 51, 51, 0.3);
 }
 
+.dashboard-page .sidebar-toggle:focus {
+  outline: none;
+  box-shadow: none; 
+}
+
 .dashboard-page .sidebar-nav {
   flex: 1;
   padding: 1rem;
-  
+}
+
+.dashboard-page .sidebar-footer {
+  padding: 0.8rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .dashboard-page .nav-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
+  display: flex-start;
   flex-direction: column;
   gap: 0.5rem;
 }
@@ -174,8 +184,8 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
+  padding: 0.35rem;
+  border-radius: 0.275rem;
   transition: var(--transition-normal);
   background: transparent;
   border: none;
@@ -187,6 +197,11 @@
 .dashboard-page .nav-item:hover {
   background-color: rgba(51, 51, 51, 0.3);
   color: var(--foreground);
+}
+
+.dashboard-page .nav-item:focus {
+  outline: none;
+  box-shadow: none; 
 }
 
 .dashboard-page .nav-item.active {
@@ -211,7 +226,7 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
+  display: flex-start;
   flex-direction: column;
   gap: 0.5rem;
 }
@@ -251,9 +266,30 @@
   background-color: var(--git-color);
 }
 
-.dashboard-page .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid var(--border-color);
+/* Adjust overlay position on desktop */
+@media (min-width: 768px) {
+  .dashboard-page .sidebar.desktop-open ~ .sidebar-overlay.active {
+    left: 16rem;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+
+  .dashboard-page .sidebar.desktop-closed ~ .sidebar-overlay.active {
+    left: 5rem;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+}
+
+/* Show/hide sidebar content dynamically */
+.dashboard-page .sidebar.desktop-closed .sidebar-content {
+  display: none;
+}
+
+.dashboard-page .sidebar.desktop-open .sidebar-content {
+  display: block; /* Changed to block for consistency, but inline works too here */
 }
 
 /* Main content */
@@ -266,7 +302,7 @@
 .dashboard-page .header {
   background-color: var(--sidebar-bg);
   border-bottom: 1px solid var(--border-color);
-  padding: 0.2rem 1rem;
+  padding: 0rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -283,24 +319,79 @@
   padding-top: 1rem;
 }
 
-.dashboard-page .menu-button {
-  color: var(--text-dimmed);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.375rem;
-  border-radius: 0.375rem;
-  transition: var(--transition-normal);
+@media (max-width: 768px) {
+  .dashboard-page .menu-button {
+    color: var(--text-dimmed);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    margin-top: -1rem;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    transition: var(--transition-normal);
+    display: inline-block;
+  }
+  
+  .dashboard-page .menu-button:hover {
+    color: var(--foreground);
+    background-color: rgba(51, 51, 51, 0.3);
+  }
+  
+  .dashboard-page .menu-button:focus {
+    outline: none;
+    box-shadow: none; 
+  }
 }
 
-.dashboard-page .menu-button:hover {
-  color: var(--foreground);
-  background-color: rgba(51, 51, 51, 0.3);
-}
-
-.dashboard-page .menu-button:focus {
-  outline: none;
-  box-shadow: none; 
+@media (min-width: 768px) {
+  .dashboard-page .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .dashboard-page .search-container {
+    position: relative;
+    flex: 1;
+    min-width: 15rem;
+    max-width: 24rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dashboard-page .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dimmed);
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .dashboard-page .search-input {
+    background-color: var(--hover-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    width: 100%;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    transition: var(--transition-normal);
+    outline: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    height: 2.25rem;
+    box-sizing: border-box;
+  }
+  
+  .dashboard-page .search-input:focus {
+    border-color: rgba(0, 255, 0, 0.5);
+    box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.2);
+  }
+  
+  .dashboard-page .search-input:hover {
+    border-color: var(--border-hover);
+  }
 }
 
 .dashboard-page .search-container {
@@ -362,6 +453,7 @@
   border: none;
   cursor: pointer;
   padding: 0.375rem;
+  padding-left: 0.8rem;
   border-radius: 0.375rem;
   transition: var(--transition-normal);
 }
@@ -403,6 +495,22 @@
   z-index: 20;
   box-shadow: var(--shadow);
   transition: opacity var(--transition-normal);
+}
+/* Mobile version */
+@media (max-width: 768px) {
+  .dashboard-page .notification-dropdown {
+    position: fixed;
+    right: 1rem;  /* add some space from the edge */
+    left: 1rem;   /* add some space from the edge */
+    top: 3rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    width: auto;  /* width is now defined by left/right margins */
+    z-index: 20;
+    box-shadow: var(--shadow);
+    transition: opacity var(--transition-normal);
+  }
 }
 
 .dashboard-page .notification-header {
@@ -473,17 +581,17 @@
 }
 
 .dashboard-page .notification-icon.team {
-  background-color: rgba(0, 255, 0, 0.2);
+  background-color: rgba(0, 255, 0, 0.3);
   color: var(--accent);
 }
 
 .dashboard-page .notification-icon.star {
-  background-color: rgba(240, 219, 79, 0.2);
+  background-color: rgba(240, 219, 79, 0.3);
   color: var(--javascript-color);
 }
 
 .dashboard-page .notification-icon.message {
-  background-color: rgba(53, 114, 165, 0.2);
+  background-color: rgba(53, 114, 165, 0.3);
   color: var(--python-color);
 }
 
@@ -654,6 +762,11 @@
 .dashboard-page .profile-header {
     flex-direction: row;
     align-items: center;
+  }
+  .dashboard-page .main-content {
+    flex: 1;
+    width: auto;
+    padding-left: 4.5rem;
   }
 }
 

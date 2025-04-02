@@ -187,7 +187,7 @@ def TeamNotificationIcon():
         tag("path", d="M23 21v-2a4 4 0 0 0-3-3.87"),
         tag("path", d="M16 3.13a4 4 0 0 1 0 7.75"),
         viewBox="0 0 24 24", width="14", height="14", stroke="currentColor",
-        strokeWidth="2", fill="none"
+        strokeWidth="2", fill="currentColor"
     )
 
 def StarIcon(width=15, height=15):
@@ -201,14 +201,14 @@ def StarIconNotification(width=14, height=14):
     return Svg(
         tag("polygon", points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"),
         viewBox="0 0 24 24", width=width, height=height, stroke="currentColor",
-        strokeWidth="2", fill="none"
+        strokeWidth="2", fill="currentColor"
     )
 
 def MessageIcon():
     return Svg(
         tag("path", d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"),
         viewBox="0 0 24 24", width="14", height="14", stroke="currentColor",
-        strokeWidth="2", fill="none"
+        strokeWidth="2", fill="currentColor"
     )
 
 def EditProfileIcon():
@@ -329,32 +329,37 @@ def ContributionGraph():
     )
 
 def ResourceUsage():
-    # Another canvas-based component
     return Div(
-        Div(id="resource-canvas", cls="resource-canvas"),
+        Div(id="resource-container", cls="resource-canvas"),
         Script("""
         document.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('resource-canvas');
-            if (!canvas) return;
+            const container = document.getElementById('resource-container');
+            if (!container) return;
+            
+            // Create canvas element
+            const canvas = document.createElement('canvas');
+            canvas.id = 'resource-canvas';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            container.appendChild(canvas);
             
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             
             // Set canvas dimensions
-            const rect = canvas.getBoundingClientRect();
+            const rect = container.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
             
             // Clear canvas
             ctx.clearRect(0, 0, rect.width, rect.height);
             
-            // Resource usage data
+            // Same drawing code as above
             const resources = [
                 { name: "CPU", usage: 0.65, color: "#00ff00" },
                 { name: "Memory", usage: 0.42, color: "#F0DB4F" },
                 { name: "Storage", usage: 0.78, color: "#3572A5" },
             ];
-            
             const barHeight = 12;
             const barGap = 24;
             const barRadius = 6;
@@ -363,31 +368,21 @@ def ResourceUsage():
             
             resources.forEach((resource, index) => {
                 const y = index * barGap + 10;
-                
-                // Draw label
                 ctx.fillStyle = "#999";
                 ctx.font = "12px sans-serif";
                 ctx.textAlign = "left";
                 ctx.fillText(resource.name, 0, y + barHeight / 2 + 4);
-                
-                // Draw background bar
                 const barX = labelWidth;
                 const barWidth = rect.width - labelWidth - valueWidth;
-                
                 ctx.fillStyle = "#252525";
                 ctx.beginPath();
                 ctx.roundRect(barX, y, barWidth, barHeight, barRadius);
                 ctx.fill();
-                
-                // Draw usage bar
                 ctx.fillStyle = resource.color;
                 const usageWidth = barWidth * resource.usage;
-                
                 ctx.beginPath();
                 ctx.roundRect(barX, y, usageWidth, barHeight, barRadius);
                 ctx.fill();
-                
-                // Draw percentage
                 ctx.fillStyle = "#fff";
                 ctx.textAlign = "right";
                 ctx.fillText(`${Math.round(resource.usage * 100)}%`, rect.width, y + barHeight / 2 + 4);
@@ -428,24 +423,22 @@ def dashboard(session):
         const notificationDropdown = document.querySelector('.notification-dropdown');
         const userMenuButton = document.getElementById('user-menu-button');
         const userDropdown = document.querySelector('.user-dropdown');
-        
+
         // Check if mobile
         const checkMobile = () => {
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
                 sidebar.classList.remove('desktop-open', 'desktop-closed');
                 sidebar.classList.add('mobile-closed');
-                document.querySelector('.main-content').style.marginLeft = '0';
             } else {
                 sidebar.classList.remove('mobile-open', 'mobile-closed');
                 sidebar.classList.add('desktop-closed');
-                document.querySelector('.main-content').style.marginLeft = '70px';
             }
         };
-        
+
         checkMobile();
         window.addEventListener('resize', checkMobile);
-        
+
         // Toggle sidebar
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', function() {
@@ -460,13 +453,13 @@ def dashboard(session):
                 } else if (sidebar.classList.contains('desktop-closed')) {
                     sidebar.classList.remove('desktop-closed');
                     sidebar.classList.add('desktop-open');
-                    document.querySelector('.main-content').style.marginLeft = '250px';
+                    overlay.classList.add('active');
                 } else {
                     sidebar.classList.remove('desktop-open');
                     sidebar.classList.add('desktop-closed');
-                    document.querySelector('.main-content').style.marginLeft = '70px';
+                    overlay.classList.remove('active');
                 }
-                
+
                 // Close dropdowns when sidebar is toggled
                 if (notificationDropdown) notificationDropdown.style.display = 'none';
                 if (userDropdown) userDropdown.style.display = 'none';
@@ -488,12 +481,18 @@ def dashboard(session):
             });
         }
         
-        // Close sidebar when clicking outside on mobile
+        // Close sidebar when clicking outside on mobile or desktop
         if (overlay) {
             overlay.addEventListener('click', function() {
-                sidebar.classList.remove('mobile-open');
-                sidebar.classList.add('mobile-closed');
-                overlay.classList.remove('active');
+                if (sidebar.classList.contains('mobile-open')) {
+                    sidebar.classList.remove('mobile-open');
+                    sidebar.classList.add('mobile-closed');
+                    overlay.classList.remove('active');
+                } else if (sidebar.classList.contains('desktop-open')) {
+                    sidebar.classList.remove('desktop-open');
+                    sidebar.classList.add('desktop-closed');
+                    overlay.classList.remove('active');
+                }
             });
         }
         
@@ -526,75 +525,105 @@ def dashboard(session):
         // Initialize contribution graph
         const contributionCanvas = document.getElementById('contribution-graph');
         if (contributionCanvas) {
-            const data = JSON.parse(contributionCanvas.getAttribute('data-contributions'));
-            renderContributionGraph(contributionCanvas, data);
+            try {
+                const data = JSON.parse(contributionCanvas.getAttribute('data-contributions') || '[]');
+                renderContributionGraph(contributionCanvas, data);
+            } catch (e) {
+                console.error('Failed to initialize contribution graph:', e);
+            }
+        } else {
+            console.warn('Contribution graph container not found in DOM');
         }
     });
     
     function renderContributionGraph(container, data) {
-        const canvas = document.createElement('canvas');
+        // Ensure container is a valid DOM element
+        if (!(container instanceof HTMLElement)) {
+            console.error('renderContributionGraph: container is not a valid DOM element', container);
+            return;
+        }
+
+        // Create the canvas element with explicit type checking
+        let canvas;
+        try {
+            canvas = document.createElement('canvas');
+            if (!(canvas instanceof HTMLCanvasElement)) {
+                throw new Error('Created element is not a canvas');
+            }
+        } catch (e) {
+            console.error('renderContributionGraph: Failed to create canvas element', e);
+            return;
+        }
+
+        // Get the 2D context immediately after creation
+        let ctx;
+        try {
+            ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('2D context is null or undefined');
+            }
+        } catch (e) {
+            console.error('renderContributionGraph: Failed to get 2D context before DOM append', e);
+            return;
+        }
+
+
+        // Modify and append canvas only after context is secured
         canvas.className = 'contribution-canvas';
         container.appendChild(canvas);
-        
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        
+
         // Set canvas dimensions
         const rect = container.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
-        
+
         // Clear canvas
         ctx.clearRect(0, 0, rect.width, rect.height);
-        
+
         // Draw contribution graph
         const cellSize = 12;
         const cellGap = 3;
         const totalWidth = rect.width;
         const totalHeight = rect.height;
-        
+
         // Calculate how many cells we can fit
         const cellsPerRow = Math.floor(totalHeight / (cellSize + cellGap));
         const cellsPerColumn = Math.floor(totalWidth / (cellSize + cellGap));
         const totalCells = cellsPerRow * cellsPerColumn;
-        
+
         // Use only the most recent data that fits
         const recentData = data.slice(-totalCells);
-        
+
         // Draw cells
         let x = 0;
         let y = 0;
-        
+
         recentData.forEach((item) => {
             const intensity = item.count / 10; // Normalize to 0-1
-            
-            // Set color based on intensity (green with varying opacity)
             ctx.fillStyle = `rgba(0, 255, 0, ${Math.max(0.1, intensity)})`;
-            
-            // Draw cell
             ctx.fillRect(x, y, cellSize, cellSize);
-            
-            // Move to next position
             x += cellSize + cellGap;
-            
-            // If we reach the end of the row, move to the next row
             if (x + cellSize > totalWidth) {
                 x = 0;
                 y += cellSize + cellGap;
             }
         });
     }
-    """
+"""
     
     # Create the dashboard UI
     return Title("Dashboard - DeadDevHub"), dashboard_css, scrollbar_styles, Script(toggle_js), Div(
-        # Overlay when sidebar is open
-        Div(cls=f"sidebar-overlay {'active' if sidebar_open and is_mobile else ''}", id="sidebar-overlay"),
-        
+    # Overlay when sidebar is open
+    Div(cls=f"sidebar-overlay {'active' if sidebar_open and is_mobile else ''}", id="sidebar-overlay"),
+    
         # Sidebar
         Aside(
             Div(
-                H1("DeadDev", Span("Hub", cls="logo-accent"), cls="logo") if sidebar_open or not is_mobile else Span("D", cls="logo-icon"),
+                # Logo is wrapped in sidebar-content for visibility toggle
+                Div(
+                    H1("DeadDev", Span("Hub", cls="logo-accent"), cls="logo"),
+                    cls="sidebar-content"
+                ),
                 Button(MenuIcon(), cls="sidebar-toggle", id="sidebar-toggle"),
                 cls="sidebar-header"
             ),
@@ -603,9 +632,9 @@ def dashboard(session):
                     Li(
                         Button(
                             HomeIcon(),
-                            Span("Dashboard", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="dashboard-label"),
+                            Span("Dashboard", cls="sidebar-content", id="dashboard-label"),
                             cls=f"nav-item {'active' if active_tab == 'dashboard' else ''}",
-                            hx_post="/toggle_tab", 
+                            hx_post="/toggle_tab",
                             hx_vals='{"tab": "dashboard"}',
                             hx_target="body",
                             hx_swap="none"
@@ -614,9 +643,9 @@ def dashboard(session):
                     Li(
                         Button(
                             ProjectsIcon(),
-                            Span("Projects", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="projects-label"),
+                            Span("Projects", cls="sidebar-content", id="projects-label"),
                             cls=f"nav-item {'active' if active_tab == 'projects' else ''}",
-                            hx_post="/toggle_tab", 
+                            hx_post="/toggle_tab",
                             hx_vals='{"tab": "projects"}',
                             hx_target="body",
                             hx_swap="none"
@@ -625,9 +654,9 @@ def dashboard(session):
                     Li(
                         Button(
                             AnalyticsIcon(),
-                            Span("Analytics", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="analytics-label"),
+                            Span("Analytics", cls="sidebar-content", id="analytics-label"),
                             cls=f"nav-item {'active' if active_tab == 'analytics' else ''}",
-                            hx_post="/toggle_tab", 
+                            hx_post="/toggle_tab",
                             hx_vals='{"tab": "analytics"}',
                             hx_target="body",
                             hx_swap="none"
@@ -636,9 +665,9 @@ def dashboard(session):
                     Li(
                         Button(
                             TeamIcon(),
-                            Span("Team", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="team-label"),
+                            Span("Team", cls="sidebar-content", id="team-label"),
                             cls=f"nav-item {'active' if active_tab == 'team' else ''}",
-                            hx_post="/toggle_tab", 
+                            hx_post="/toggle_tab",
                             hx_vals='{"tab": "team"}',
                             hx_target="body",
                             hx_swap="none"
@@ -647,9 +676,9 @@ def dashboard(session):
                     Li(
                         Button(
                             DocsIcon(),
-                            Span("Documentation", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="docs-label"),
+                            Span("Documentation", cls="sidebar-content", id="docs-label"),
                             cls=f"nav-item {'active' if active_tab == 'docs' else ''}",
-                            hx_post="/toggle_tab", 
+                            hx_post="/toggle_tab",
                             hx_vals='{"tab": "docs"}',
                             hx_target="body",
                             hx_swap="none"
@@ -688,7 +717,7 @@ def dashboard(session):
                         ),
                         cls="recent-projects-list"
                     ),
-                    cls=f"recent-projects {'hidden' if not sidebar_open and not is_mobile else ''}"
+                    cls="recent-projects sidebar-content"
                 ),
                 cls="sidebar-nav"
             ),
@@ -697,9 +726,9 @@ def dashboard(session):
             Div(
                 Button(
                     SettingsIcon(),
-                    Span("Settings", cls=f"{'hidden' if not sidebar_open and not is_mobile else ''}", id="settings-label"),
+                    Span("Settings", cls="sidebar-content", id="settings-label"),
                     cls=f"nav-item {'active' if active_tab == 'settings' else ''}",
-                    hx_post="/toggle_tab", 
+                    hx_post="/toggle_tab",
                     hx_vals='{"tab": "settings"}',
                     hx_target="body",
                     hx_swap="none"
