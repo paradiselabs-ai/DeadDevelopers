@@ -5,7 +5,8 @@ import random
 import json
 from typing import Dict, List
 from datetime import datetime, timedelta
-from app import rt, app
+from app import rt, app, User
+from starlette.responses import RedirectResponse
 
 # Create dashboard-specific headers
 dashboard_css = Link(rel='stylesheet', href='/css/dashboard.css', type='text/css')
@@ -393,7 +394,12 @@ def ResourceUsage():
 
 # Define main dashboard route
 @rt("/dashboard")
-def dashboard(session):
+def dashboard(session, req):
+    # Check if user is authenticated
+    if 'auth' not in session or not session['auth']:
+        # User is not authenticated, redirect to login page
+        return RedirectResponse('/login', status_code=303)
+
     # Get session state or set defaults
     if 'dashboard_state' not in session:
         session['dashboard_state'] = {
@@ -404,8 +410,11 @@ def dashboard(session):
             'searchQuery': '',
             'isMobile': False
         }
-    
+
     state = session['dashboard_state']
+
+    # Get the username from the session
+    username = session['auth']
     
     # Determine if mobile (this would normally be done with JS on client side)
     is_mobile = state.get('isMobile', False)
@@ -846,25 +855,25 @@ def dashboard(session):
                     Div(
                         Button(
                             Div(
-                                Img(src="/placeholder.svg?height=32&width=32", 
-                                    alt="Profile", 
-                                    crossorigin="anonymous", 
+                                Img(src="\img\code-avatar.svg?height=32&width=32",
+                                    alt="Profile",
+                                    crossorigin="anonymous",
                                     cls="avatar"
                                 ),
                                 cls="avatar-container"
                             ),
-                            Span("DeadDev_42", cls="username"),
+                            Span(username, cls="username"),
                             cls="user-menu-button",
                             id="user-menu-button",
                             # Adding HTMX attributes for dropdown toggle
                             hx_target="#user-dropdown",
                             hx_swap="innerHTML"
                         ),
-                        
+
                         # User Dropdown
                         Div(
                             Div(
-                                P("DeadDev_42", cls="user-name"),
+                                P(username, cls="user-name"),
                                 P("Senior AI Developer", cls="user-role"),
                                 cls="user-dropdown-header"
                             ),
@@ -925,11 +934,11 @@ def dashboard(session):
                 Div(
                     Div(
                         Div(
-                            Img(src="/placeholder.svg?height=48&width=48", alt="Profile", crossorigin="anonymous"),
+                            Img(src="\img\code-avatar.svg?height=48&width=48", alt="Profile", crossorigin="anonymous"),
                             cls="profile-avatar"
                         ),
                         Div(
-                            H1("DeadDev_42", cls="profile-name"),
+                            H1(username, cls="profile-name"),
                             P("Senior AI Developer", cls="profile-role")
                         ),
                         cls="profile-info"
