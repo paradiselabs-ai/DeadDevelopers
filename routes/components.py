@@ -410,7 +410,7 @@ def GlobalChat(is_open=False):
 
             # Add JavaScript for tab switching and chat input functionality
             Script("""
-            // Function to switch between chat tabs
+            // Function to switch between chat tabs with smooth animations
             function switchChatTab(tabName) {
                 // Get elements
                 const chatContent = document.getElementById('chat-content');
@@ -418,27 +418,114 @@ def GlobalChat(is_open=False):
                 const chatTabButton = document.getElementById('chat-tab-button');
                 const usersTabButton = document.getElementById('users-tab-button');
                 const headerTitle = document.querySelector('#chat-sidebar h2');
+                const tabsContainer = document.querySelector('.chat-tabs');
+
+                // Prevent rapid tab switching by checking if animation is in progress
+                if (document.querySelector('.tab-switching-in-progress')) {
+                    return;
+                }
+
+                // Mark that tab switching is in progress
+                document.body.classList.add('tab-switching-in-progress');
 
                 if (tabName === 'chat') {
-                    // Show chat tab
-                    chatContent.style.display = 'flex';
-                    usersContent.style.display = 'none';
+                    // Update tab indicator
+                    tabsContainer.classList.remove('users-active');
+
+                    // Update active tab styling
                     chatTabButton.classList.add('active');
                     usersTabButton.classList.remove('active');
-                    if (headerTitle) headerTitle.textContent = "Global Chat";
 
-                    // Focus on the chat input
+                    // Animate out users content
+                    usersContent.classList.remove('slide-in');
+                    usersContent.classList.add('slide-out');
+
+                    // After a short delay, animate in chat content
                     setTimeout(() => {
-                        const chatInput = document.getElementById('chat-message-input');
-                        if (chatInput) chatInput.focus();
-                    }, 100);
+                        // Update header
+                        if (headerTitle) {
+                            headerTitle.textContent = "Global Chat";
+                            // Add a subtle animation to the header
+                            headerTitle.animate([
+                                { opacity: 0.7, transform: 'translateY(-3px)' },
+                                { opacity: 1, transform: 'translateY(0)' }
+                            ], {
+                                duration: 300,
+                                easing: 'ease-out'
+                            });
+                        }
+
+                        // Show chat content
+                        chatContent.style.display = 'flex';
+
+                        // Trigger reflow to ensure the transition works
+                        void chatContent.offsetWidth;
+
+                        // Animate in chat content
+                        chatContent.classList.remove('slide-out');
+                        chatContent.classList.add('slide-in');
+
+                        // Focus on the chat input after animation completes
+                        setTimeout(() => {
+                            const chatInput = document.getElementById('chat-message-input');
+                            if (chatInput) chatInput.focus();
+
+                            // Remove the in-progress flag
+                            document.body.classList.remove('tab-switching-in-progress');
+                        }, 300);
+                    }, 150);
+
+                    // After animation completes, hide users content
+                    setTimeout(() => {
+                        usersContent.style.display = 'none';
+                    }, 300);
                 } else {
-                    // Show users tab
-                    chatContent.style.display = 'none';
-                    usersContent.style.display = 'block';
+                    // Update tab indicator
+                    tabsContainer.classList.add('users-active');
+
+                    // Update active tab styling
                     chatTabButton.classList.remove('active');
                     usersTabButton.classList.add('active');
-                    if (headerTitle) headerTitle.textContent = "Online Users";
+
+                    // Animate out chat content
+                    chatContent.classList.remove('slide-in');
+                    chatContent.classList.add('slide-out');
+
+                    // After a short delay, animate in users content
+                    setTimeout(() => {
+                        // Update header
+                        if (headerTitle) {
+                            headerTitle.textContent = "Online Users";
+                            // Add a subtle animation to the header
+                            headerTitle.animate([
+                                { opacity: 0.7, transform: 'translateY(-3px)' },
+                                { opacity: 1, transform: 'translateY(0)' }
+                            ], {
+                                duration: 300,
+                                easing: 'ease-out'
+                            });
+                        }
+
+                        // Show users content
+                        usersContent.style.display = 'block';
+
+                        // Trigger reflow to ensure the transition works
+                        void usersContent.offsetWidth;
+
+                        // Animate in users content
+                        usersContent.classList.remove('slide-out');
+                        usersContent.classList.add('slide-in');
+
+                        // Remove the in-progress flag after animation completes
+                        setTimeout(() => {
+                            document.body.classList.remove('tab-switching-in-progress');
+                        }, 300);
+                    }, 150);
+
+                    // After animation completes, hide chat content
+                    setTimeout(() => {
+                        chatContent.style.display = 'none';
+                    }, 300);
                 }
             }
 
@@ -451,6 +538,47 @@ def GlobalChat(is_open=False):
                 button.removeAttribute('style');
                 button.className = 'chat-send-button';
             }
+
+            // Function to create a ripple effect on tab buttons
+            function createRipple(event) {
+                const button = event.currentTarget;
+
+                // Remove any existing ripples
+                const ripples = button.getElementsByClassName('ripple');
+                for (let i = 0; i < ripples.length; i++) {
+                    button.removeChild(ripples[i]);
+                }
+
+                // Create ripple element
+                const circle = document.createElement('span');
+                const diameter = Math.max(button.clientWidth, button.clientHeight);
+                const radius = diameter / 2;
+
+                // Position the ripple based on click location
+                const rect = button.getBoundingClientRect();
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${event.clientX - rect.left - radius}px`;
+                circle.style.top = `${event.clientY - rect.top - radius}px`;
+                circle.classList.add('ripple');
+
+                // Add the ripple to the button
+                button.appendChild(circle);
+
+                // Remove the ripple after animation completes
+                setTimeout(() => {
+                    if (circle && circle.parentNode === button) {
+                        button.removeChild(circle);
+                    }
+                }, 600);
+            }
+
+            // Add ripple effect to tab buttons
+            document.addEventListener('DOMContentLoaded', function() {
+                const tabButtons = document.querySelectorAll('.chat-tab');
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', createRipple);
+                });
+            });
 
             // Track message sending metrics
             let messagesSent = 0;
@@ -674,6 +802,19 @@ def GlobalChat(is_open=False):
                 const chatInput = document.getElementById('chat-message-input');
                 const sendButton = document.getElementById('send-message-button');
                 const chatMessages = document.getElementById('chat-messages');
+                const chatContent = document.getElementById('chat-content');
+                const usersContent = document.getElementById('users-content');
+
+                // Ensure initial tab state is correct
+                if (chatContent) {
+                    chatContent.classList.add('slide-in');
+                    chatContent.classList.remove('slide-out');
+                }
+
+                if (usersContent) {
+                    usersContent.classList.add('slide-out');
+                    usersContent.classList.remove('slide-in');
+                }
 
                 // Enable/disable send button based on input
                 if (chatInput && sendButton) {
@@ -766,7 +907,7 @@ def GlobalChat(is_open=False):
                         cls="chat-input-container"
                     ),
                     id="chat-content",
-                    cls="chat-content",
+                    cls="chat-content slide-in",
                     style="display: flex;"
                 ),
 
@@ -777,7 +918,7 @@ def GlobalChat(is_open=False):
                         cls="users-list-content"
                     ),
                     id="users-content",
-                    cls="users-list",
+                    cls="users-list slide-out",
                     style="display: none;"
                 ),
 
