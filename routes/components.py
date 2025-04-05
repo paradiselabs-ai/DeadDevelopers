@@ -319,6 +319,7 @@ def GlobalChat(is_open=False):
             Div(
                 Img(src=msg["user"]["avatar"] or "/placeholder.svg", alt=f"{msg['user']['name']}'s avatar", cls="message-avatar"),
                 Div(cls="avatar-status online") if msg["user"]["online"] else None,
+                Div("Online", cls="status-tooltip") if msg["user"]["online"] else None,
                 cls="message-avatar-container"
             ),
             Div(
@@ -341,12 +342,13 @@ def GlobalChat(is_open=False):
             Div(
                 Img(src=user["avatar"] or "/placeholder.svg", alt=f"{user['name']}'s avatar", cls="user-avatar"),
                 Div(cls=f"status-indicator {user['status']}"),
+                Div(user["status"].capitalize(), cls="status-tooltip"),
                 cls="user-avatar-container"
             ),
             Div(
                 Div(
                     Span(user["name"], cls="user-name"),
-                    Span(user["status"], cls="user-status-text"),
+                    Span(user["status"], cls=f"user-status-text {user['status']}"),
                     cls="user-info-header"
                 ),
                 P("Active now" if user["status"] == "online" else "", cls="user-last-seen"),
@@ -410,7 +412,7 @@ def GlobalChat(is_open=False):
 
             # Add JavaScript for tab switching and chat input functionality
             Script("""
-            // Function to switch between chat tabs with smooth animations
+            // Function to switch between chat tabs with simple animations
             function switchChatTab(tabName) {
                 // Get elements
                 const chatContent = document.getElementById('chat-content');
@@ -436,49 +438,31 @@ def GlobalChat(is_open=False):
                     chatTabButton.classList.add('active');
                     usersTabButton.classList.remove('active');
 
-                    // Animate out users content
+                    // Update header
+                    if (headerTitle) {
+                        headerTitle.textContent = "Global Chat";
+                    }
+
+                    // Hide users content, show chat content
                     usersContent.classList.remove('slide-in');
                     usersContent.classList.add('slide-out');
 
-                    // After a short delay, animate in chat content
+                    // Show chat content
+                    chatContent.style.display = 'flex';
+                    chatContent.classList.remove('slide-out');
+                    chatContent.classList.add('slide-in');
+
+                    // Focus on the chat input
                     setTimeout(() => {
-                        // Update header
-                        if (headerTitle) {
-                            headerTitle.textContent = "Global Chat";
-                            // Add a subtle animation to the header
-                            headerTitle.animate([
-                                { opacity: 0.7, transform: 'translateY(-3px)' },
-                                { opacity: 1, transform: 'translateY(0)' }
-                            ], {
-                                duration: 300,
-                                easing: 'ease-out'
-                            });
-                        }
+                        const chatInput = document.getElementById('chat-message-input');
+                        if (chatInput) chatInput.focus();
 
-                        // Show chat content
-                        chatContent.style.display = 'flex';
-
-                        // Trigger reflow to ensure the transition works
-                        void chatContent.offsetWidth;
-
-                        // Animate in chat content
-                        chatContent.classList.remove('slide-out');
-                        chatContent.classList.add('slide-in');
-
-                        // Focus on the chat input after animation completes
-                        setTimeout(() => {
-                            const chatInput = document.getElementById('chat-message-input');
-                            if (chatInput) chatInput.focus();
-
-                            // Remove the in-progress flag
-                            document.body.classList.remove('tab-switching-in-progress');
-                        }, 300);
-                    }, 150);
-
-                    // After animation completes, hide users content
-                    setTimeout(() => {
+                        // Hide users content after transition
                         usersContent.style.display = 'none';
-                    }, 300);
+
+                        // Remove the in-progress flag
+                        document.body.classList.remove('tab-switching-in-progress');
+                    }, 250);
                 } else {
                     // Update tab indicator
                     tabsContainer.classList.add('users-active');
@@ -487,45 +471,27 @@ def GlobalChat(is_open=False):
                     chatTabButton.classList.remove('active');
                     usersTabButton.classList.add('active');
 
-                    // Animate out chat content
+                    // Update header
+                    if (headerTitle) {
+                        headerTitle.textContent = "Online Users";
+                    }
+
+                    // Hide chat content, show users content
                     chatContent.classList.remove('slide-in');
                     chatContent.classList.add('slide-out');
 
-                    // After a short delay, animate in users content
-                    setTimeout(() => {
-                        // Update header
-                        if (headerTitle) {
-                            headerTitle.textContent = "Online Users";
-                            // Add a subtle animation to the header
-                            headerTitle.animate([
-                                { opacity: 0.7, transform: 'translateY(-3px)' },
-                                { opacity: 1, transform: 'translateY(0)' }
-                            ], {
-                                duration: 300,
-                                easing: 'ease-out'
-                            });
-                        }
+                    // Show users content
+                    usersContent.style.display = 'block';
+                    usersContent.classList.remove('slide-out');
+                    usersContent.classList.add('slide-in');
 
-                        // Show users content
-                        usersContent.style.display = 'block';
-
-                        // Trigger reflow to ensure the transition works
-                        void usersContent.offsetWidth;
-
-                        // Animate in users content
-                        usersContent.classList.remove('slide-out');
-                        usersContent.classList.add('slide-in');
-
-                        // Remove the in-progress flag after animation completes
-                        setTimeout(() => {
-                            document.body.classList.remove('tab-switching-in-progress');
-                        }, 300);
-                    }, 150);
-
-                    // After animation completes, hide chat content
+                    // Hide chat content after transition
                     setTimeout(() => {
                         chatContent.style.display = 'none';
-                    }, 300);
+
+                        // Remove the in-progress flag
+                        document.body.classList.remove('tab-switching-in-progress');
+                    }, 250);
                 }
             }
 
@@ -578,7 +544,36 @@ def GlobalChat(is_open=False):
                 tabButtons.forEach(button => {
                     button.addEventListener('click', createRipple);
                 });
+
+                // Initialize status tooltips
+                initializeStatusTooltips();
             });
+
+            // Function to initialize status tooltips
+            function initializeStatusTooltips() {
+                // Get all status indicators
+                const statusIndicators = document.querySelectorAll('.status-indicator, .avatar-status');
+
+                // Add mouseover event to show tooltip with status information
+                statusIndicators.forEach(indicator => {
+                    indicator.addEventListener('mouseover', function() {
+                        // Find the tooltip
+                        const tooltip = this.nextElementSibling;
+                        if (tooltip && tooltip.classList.contains('status-tooltip')) {
+                            // Update tooltip text based on status
+                            if (this.classList.contains('online')) {
+                                tooltip.textContent = 'Online';
+                            } else if (this.classList.contains('away')) {
+                                tooltip.textContent = 'Away';
+                            } else if (this.classList.contains('busy')) {
+                                tooltip.textContent = 'Do Not Disturb';
+                            } else if (this.classList.contains('offline')) {
+                                tooltip.textContent = 'Offline';
+                            }
+                        }
+                    });
+                });
+            }
 
             // Track message sending metrics
             let messagesSent = 0;

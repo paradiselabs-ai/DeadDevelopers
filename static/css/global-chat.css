@@ -76,28 +76,6 @@
   font-weight: 600;
   color: var(--chat-text);
   margin: 0;
-  transition: color 0.3s ease;
-  position: relative;
-  display: inline-block;
-}
-
-.chat-header h2::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background-color: var(--chat-accent);
-  transition: width 0.3s ease;
-}
-
-.chat-header h2:hover {
-  color: var(--chat-accent);
-}
-
-.chat-header h2:hover::after {
-  width: 100%;
 }
 
 .online-badge {
@@ -145,7 +123,7 @@
   background-color: var(--chat-accent);
   width: 50%;
   transform: translateX(0);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.3s ease;
   z-index: 1;
 }
 
@@ -169,27 +147,9 @@
   letter-spacing: 0.01em;
 }
 
-.chat-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, var(--chat-accent-bg) 0%, transparent 70%);
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.3s ease;
-  z-index: -1;
-}
-
 .chat-tab:hover {
   color: var(--chat-text);
-}
-
-.chat-tab:hover::before {
-  opacity: 0.3;
-  transform: scale(1.5);
+  background-color: rgba(40, 40, 40, 0.5);
 }
 
 .chat-tab.active {
@@ -202,15 +162,6 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: transform 0.2s ease;
-}
-
-.chat-tab:hover .chat-tab-content {
-  transform: translateY(-2px);
-}
-
-.chat-tab.active .chat-tab-content {
-  transform: translateY(0);
 }
 
 /* Content wrapper */
@@ -235,19 +186,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
+  transition: opacity 0.25s ease;
 }
 
 .chat-content.slide-out {
-  transform: translateX(-30px);
   opacity: 0;
   pointer-events: none;
 }
 
 .chat-content.slide-in {
-  transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
 }
@@ -264,19 +211,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
+  transition: opacity 0.25s ease;
 }
 
 .users-list.slide-out {
-  transform: translateX(30px);
   opacity: 0;
   pointer-events: none;
 }
 
 .users-list.slide-in {
-  transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
 }
@@ -312,14 +255,29 @@
 .message-avatar-container {
   position: relative;
   flex-shrink: 0;
+  margin-right: 0.25rem;
 }
 
 .message-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background-color: var(--chat-hover-bg);
   overflow: hidden;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Add a subtle glow to online users' avatars */
+.chat-message:has(.avatar-status.online) .message-avatar {
+  border-color: rgba(0, 255, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 255, 0, 0.15);
+}
+
+.message-avatar-container:hover .message-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
 }
 
 .message-avatar img {
@@ -330,28 +288,56 @@
 
 .avatar-status {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 0.625rem;
-  height: 0.625rem;
+  bottom: -2px;
+  right: -2px;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
   border: 2px solid var(--chat-bg);
+  transition: all 0.3s ease;
+  z-index: 2;
 }
 
 .avatar-status.online {
   background-color: var(--status-online);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(0, 255, 0, 0.5);
 }
 
 .avatar-status.away {
   background-color: var(--status-away);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(240, 219, 79, 0.5);
 }
 
 .avatar-status.busy {
   background-color: var(--status-busy);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(255, 51, 51, 0.5);
 }
 
 .avatar-status.offline {
   background-color: var(--status-offline);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Pulsing animation for online status */
+@keyframes statusPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.avatar-status.online {
+  animation: statusPulse 2s infinite ease-in-out;
+}
+
+/* Status change animation */
+@keyframes statusChange {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.5); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.status-indicator, .avatar-status {
+  animation: statusChange 0.5s ease-out;
 }
 
 .message-content {
@@ -666,22 +652,6 @@ button.chat-send-button.sending,
   pointer-events: none;
 }
 
-/* Add a subtle pulse animation to the active tab */
-@keyframes tabActivePulse {
-  0% { background-color: transparent; }
-  50% { background-color: var(--chat-accent-bg); }
-  100% { background-color: transparent; }
-}
-
-.chat-tab.active {
-  animation: tabActivePulse 2s infinite;
-  animation-play-state: paused;
-}
-
-.chat-tab.active:hover {
-  animation-play-state: running;
-}
-
 /* Ripple effect for tab buttons */
 .chat-tab {
   position: relative;
@@ -691,15 +661,15 @@ button.chat-send-button.sending,
 .ripple {
   position: absolute;
   border-radius: 50%;
-  background-color: rgba(0, 255, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.15);
   transform: scale(0);
-  animation: ripple 0.6s linear;
+  animation: ripple 0.4s ease-out;
   pointer-events: none;
 }
 
 @keyframes ripple {
   to {
-    transform: scale(4);
+    transform: scale(2.5);
     opacity: 0;
   }
 }
@@ -711,10 +681,8 @@ button.chat-send-button.sending,
   padding: 0.75rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: background-color 0.2s ease;
   background-color: rgba(37, 37, 37, 0.3);
-  border: 1px solid transparent;
-  transform-origin: center;
   animation: userItemAppear 0.5s backwards;
 }
 
@@ -723,47 +691,60 @@ button.chat-send-button.sending,
 .user-item:nth-child(3) { animation-delay: 0.15s; }
 .user-item:nth-child(4) { animation-delay: 0.2s; }
 .user-item:nth-child(5) { animation-delay: 0.25s; }
-.user-item:nth-child(6) { animation-delay: 0.3s; }
-.user-item:nth-child(7) { animation-delay: 0.35s; }
-.user-item:nth-child(8) { animation-delay: 0.4s; }
-.user-item:nth-child(9) { animation-delay: 0.45s; }
-.user-item:nth-child(10) { animation-delay: 0.5s; }
 
 @keyframes userItemAppear {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.95);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .user-item:hover {
   background-color: var(--chat-hover-bg);
-  border-color: rgba(0, 255, 0, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .user-item:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.1s ease;
+  background-color: rgba(50, 50, 50, 0.5);
 }
 
 .user-avatar-container {
   position: relative;
   flex-shrink: 0;
+  margin-right: 0.25rem;
 }
 
 .user-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background-color: var(--chat-hover-bg);
   overflow: hidden;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Add a subtle glow to online users' avatars */
+.user-item:has(.status-indicator.online) .user-avatar {
+  border-color: rgba(0, 255, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 255, 0, 0.15);
+}
+
+.user-item:has(.status-indicator.away) .user-avatar {
+  border-color: rgba(240, 219, 79, 0.2);
+}
+
+.user-item:has(.status-indicator.busy) .user-avatar {
+  border-color: rgba(255, 51, 51, 0.2);
+}
+
+.user-avatar-container:hover .user-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
 }
 
 .user-avatar img {
@@ -795,37 +776,142 @@ button.chat-send-button.sending,
 
 .user-status-text {
   font-size: 0.75rem;
-  color: var(--chat-text-dimmed);
   text-transform: capitalize;
+  font-weight: 500;
+  padding: 2px 6px 2px 16px;
+  border-radius: 10px;
+  background-color: rgba(40, 40, 40, 0.6);
+  position: relative;
+}
+
+.user-status-text::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.user-status-text.online {
+  color: var(--status-online);
+}
+
+.user-status-text.online::before {
+  background-color: var(--status-online);
+  box-shadow: 0 0 4px var(--status-online);
+}
+
+.user-status-text.away {
+  color: var(--status-away);
+}
+
+.user-status-text.away::before {
+  background-color: var(--status-away);
+  box-shadow: 0 0 4px var(--status-away);
+}
+
+.user-status-text.busy {
+  color: var(--status-busy);
+}
+
+.user-status-text.busy::before {
+  background-color: var(--status-busy);
+  box-shadow: 0 0 4px var(--status-busy);
+}
+
+.user-status-text.offline {
+  color: var(--chat-text-dimmed);
+}
+
+.user-status-text.offline::before {
+  background-color: var(--status-offline);
 }
 
 .user-last-seen {
   font-size: 0.75rem;
   color: var(--chat-text-dimmed);
+  margin-top: 2px;
 }
 
 /* Status indicators */
 .status-indicator {
-  width: 0.625rem;
-  height: 0.625rem;
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
   border: 2px solid var(--chat-bg);
+  transition: all 0.3s ease;
+  z-index: 2;
 }
 
 .status-indicator.online {
   background-color: var(--status-online);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(0, 255, 0, 0.5);
+  animation: statusPulse 2s infinite ease-in-out;
 }
 
 .status-indicator.away {
   background-color: var(--status-away);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(240, 219, 79, 0.5);
 }
 
 .status-indicator.busy {
   background-color: var(--status-busy);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(255, 51, 51, 0.5);
 }
 
 .status-indicator.offline {
   background-color: var(--status-offline);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Status tooltip */
+.user-avatar-container {
+  position: relative;
+}
+
+.status-tooltip {
+  position: absolute;
+  bottom: -30px;
+  right: -10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transform: translateY(5px);
+}
+
+.user-avatar-container:hover .status-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Status indicator hover effect */
+.status-indicator:hover, .avatar-status:hover {
+  transform: scale(1.2);
+  cursor: help;
+}
+
+/* Show tooltip when hovering over status indicator */
+.status-indicator:hover + .status-tooltip,
+.avatar-status:hover + .status-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 /* Chat button in header */
