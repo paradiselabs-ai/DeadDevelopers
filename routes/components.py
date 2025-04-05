@@ -442,6 +442,16 @@ def GlobalChat(is_open=False):
                 }
             }
 
+            // Store the send icon SVG for reuse
+            const sendIconSvg = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+
+            // Track message sending metrics
+            let messagesSent = 0;
+            let lastMessageSentTime = 0;
+            let lastActivityTime = Date.now();
+            let showSuccessThreshold = 1000; // Show success for messages that take longer than 1 second
+            let sessionTimeout = 10 * 60 * 1000; // Reset counter after 10 minutes of inactivity
+
             // Function to send a chat message using fetch API
             function sendChatMessage() {
                 const chatInput = document.getElementById('chat-message-input');
@@ -449,15 +459,37 @@ def GlobalChat(is_open=False):
                 const chatMessages = document.getElementById('chat-messages');
                 const indicator = document.getElementById('chat-sending-indicator');
 
+                // Check if we need to reset the session counter due to inactivity
+                const now = Date.now();
+                if (now - lastActivityTime > sessionTimeout) {
+                    messagesSent = 0; // Reset the counter if user was inactive
+                }
+                lastActivityTime = now;
+
                 // Get the message text
                 const messageText = chatInput.value.trim();
                 if (!messageText) return;
 
-                // Show the sending indicator
-                if (indicator) indicator.classList.add('htmx-request');
+                // Record the start time for this message
+                const sendStartTime = Date.now();
+                lastMessageSentTime = sendStartTime;
 
-                // Disable the button while sending
-                if (sendButton) sendButton.disabled = true;
+                // Show the sending indicator and update button state
+                if (indicator) {
+                    // Clear any existing classes or styles
+                    indicator.className = 'chat-sending-indicator htmx-request';
+                    indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                    indicator.style.display = 'flex';
+                    indicator.style.opacity = '1';
+                }
+
+                // Disable the button and change its appearance while sending
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.className = 'chat-send-button sending';
+                    sendButton.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10" opacity="0.3"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>';
+                    sendButton.style.opacity = '0.8';
+                }
 
                 // Create form data
                 const formData = new FormData();
@@ -502,11 +534,76 @@ def GlobalChat(is_open=False):
                         chatInput.value = '';
                     }
 
-                    // Hide the sending indicator
-                    if (indicator) indicator.classList.remove('htmx-request');
+                    // Calculate how long the message took to send
+                    const sendDuration = Date.now() - lastMessageSentTime;
+                    messagesSent++;
 
-                    // Re-enable the button if there's text in the input
-                    if (sendButton) sendButton.disabled = !chatInput.value.trim();
+                    // Hide the sending indicator with a slight delay for better UX
+                    setTimeout(() => {
+                        if (indicator) {
+                            indicator.classList.remove('htmx-request');
+
+                            // Only show success message in specific cases:
+                            // 1. First 2 messages sent by the user
+                            // 2. Messages that took longer than the threshold to send
+                            // 3. Every 10th message as a reassurance
+                            const shouldShowSuccess =
+                                messagesSent <= 2 ||
+                                sendDuration > showSuccessThreshold ||
+                                messagesSent % 10 === 0;
+
+                            if (shouldShowSuccess) {
+                                // Show a brief success message with animation
+                                indicator.className = 'chat-sending-indicator visible';
+                                indicator.innerHTML = '<span class="chat-sending-text success">Sent</span>';
+
+                                // Add a subtle animation
+                                indicator.style.transform = 'translateY(-0.5rem)';
+
+                                // Hide the success message after 1.5 seconds with a smooth fade
+                                setTimeout(() => {
+                                    indicator.style.opacity = '0';
+                                    indicator.style.transform = 'translateY(-1rem)';
+                                    setTimeout(() => {
+                                        indicator.style.display = 'none';
+                                        indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                                    }, 300);
+                                }, 1500);
+                            } else {
+                                // Just reset the indicator without showing success
+                                indicator.style.opacity = '0';
+                                indicator.style.transform = 'translateY(-1rem)';
+                                setTimeout(() => {
+                                    indicator.style.display = 'none';
+                                    indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                                }, 300);
+                            }
+                        }
+                    }, 300);
+
+                    // Restore the send button with a subtle animation
+                    if (sendButton) {
+                        sendButton.className = 'chat-send-button';
+                        sendButton.disabled = !chatInput.value.trim();
+                        sendButton.innerHTML = sendIconSvg;
+                        sendButton.style.opacity = '1';
+
+                        // Ensure the button maintains its styling from CSS
+                        sendButton.style.backgroundColor = 'var(--chat-accent)';
+                        sendButton.style.color = '#000';
+
+                        // Add a subtle pop animation when the button is restored
+                        if (!sendButton.disabled) {
+                            sendButton.animate([
+                                { transform: 'scale(0.95)' },
+                                { transform: 'scale(1.05)' },
+                                { transform: 'scale(1)' }
+                            ], {
+                                duration: 300,
+                                easing: 'ease-out'
+                            });
+                        }
+                    }
 
                     // Focus the input again
                     chatInput.focus();
@@ -523,11 +620,46 @@ def GlobalChat(is_open=False):
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     }
 
-                    // Hide the sending indicator
-                    if (indicator) indicator.classList.remove('htmx-request');
+                    // Update the sending indicator to show error
+                    if (indicator) {
+                        indicator.className = 'chat-sending-indicator visible';
+                        indicator.innerHTML = '<span class="chat-sending-text error">Failed</span>';
+                        indicator.style.transform = 'translateY(-0.5rem)';
 
-                    // Re-enable the button if there's text in the input
-                    if (sendButton) sendButton.disabled = !chatInput.value.trim();
+                        // Hide the error message after 3 seconds with a smooth fade
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                            indicator.style.transform = 'translateY(-1rem)';
+                            setTimeout(() => {
+                                indicator.style.display = 'none';
+                                indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                            }, 300);
+                        }, 3000);
+                    }
+
+                    // Restore the send button with error state indication
+                    if (sendButton) {
+                        sendButton.className = 'chat-send-button';
+                        sendButton.disabled = !chatInput.value.trim();
+                        sendButton.innerHTML = sendIconSvg;
+                        sendButton.style.opacity = '1';
+
+                        // Ensure the button maintains its styling from CSS
+                        sendButton.style.backgroundColor = 'var(--chat-accent)';
+                        sendButton.style.color = '#000';
+
+                        // Add a subtle shake animation to indicate error
+                        sendButton.animate([
+                            { transform: 'translateX(-3px)' },
+                            { transform: 'translateX(3px)' },
+                            { transform: 'translateX(-2px)' },
+                            { transform: 'translateX(2px)' },
+                            { transform: 'translateX(0)' }
+                        ], {
+                            duration: 400,
+                            easing: 'ease-out'
+                        });
+                    }
                 });
             }
 
@@ -539,8 +671,10 @@ def GlobalChat(is_open=False):
 
                 // Enable/disable send button based on input
                 if (chatInput && sendButton) {
-                    // Initially disable the button
+                    // Initially disable the button and ensure styling
                     sendButton.disabled = true;
+                    sendButton.style.backgroundColor = 'var(--chat-accent)';
+                    sendButton.style.color = '#000';
 
                     chatInput.addEventListener('input', function() {
                         sendButton.disabled = !this.value.trim();
@@ -596,7 +730,7 @@ def GlobalChat(is_open=False):
                             id="chat-form"
                         ),
                         Div(
-                            Span("Sending...", cls="chat-sending-text"),
+                            Span("Sending message...", cls="chat-sending-text"),
                             cls="chat-sending-indicator",
                             id="chat-sending-indicator"
                         ),
