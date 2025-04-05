@@ -566,11 +566,13 @@ def GlobalChat(is_open=False):
             Div(
                 # Messages tab
                 Div(
+                    # Messages container with scrolling
                     Div(
                         *message_elements,
                         id="chat-messages",
                         cls="chat-messages"
                     ),
+                    # Input container (fixed at bottom)
                     Div(
                         Div(
                             Input(
@@ -605,9 +607,12 @@ def GlobalChat(is_open=False):
                     style="display: flex;"
                 ),
 
-                # Users tab
+                # Users tab with scrolling
                 Div(
-                    *user_elements,
+                    Div(
+                        *user_elements,
+                        cls="users-list-content"
+                    ),
                     id="users-content",
                     cls="users-list",
                     style="display: none;"
