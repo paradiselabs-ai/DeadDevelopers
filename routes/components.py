@@ -3,6 +3,7 @@ from fasthtml.svg import Svg, ft_svg as tag
 from pathlib import Path
 import json
 from typing import Dict, List
+from app import rt
 
 # Create dashboard-specific headers
 dashboard_css = Link(rel='stylesheet', href='/css/dashboard.css', type='text/css')
@@ -150,7 +151,7 @@ def SendIcon():
         tag("line", x1="22", y1="2", x2="11", y2="13"),
         tag("polygon", points="22 2 15 22 11 13 2 9 22 2"),
         viewBox="0 0 24 24", width="18", height="18", stroke="currentColor",
-        strokeWidth="2", fill="none"
+        strokeWidth="2", fill="none", strokeLinecap="round", strokeLinejoin="round"
     )
 
 def UsersIcon(width=16, height=16):
@@ -392,9 +393,7 @@ def GlobalChat(is_open=False):
                     ),
                     cls="chat-tab active",
                     id="chat-tab-button",
-                    hx_get="/chat_tab",  # Dummy endpoint for tab switch
-                    hx_target="#chat-content",
-                    hx_swap="innerHTML"
+                    onclick="switchChatTab('chat')"
                 ),
                 Button(
                     Div(
@@ -404,12 +403,83 @@ def GlobalChat(is_open=False):
                     ),
                     cls="chat-tab",
                     id="users-tab-button",
-                    hx_get="/users_tab",  # Dummy endpoint for tab switch
-                    hx_target="#users-content",
-                    hx_swap="innerHTML"
+                    onclick="switchChatTab('users')"
                 ),
                 cls="chat-tabs"
             ),
+
+            # Add JavaScript for tab switching and chat input functionality
+            Script("""
+            function switchChatTab(tabName) {
+                // Get elements
+                const chatContent = document.getElementById('chat-content');
+                const usersContent = document.getElementById('users-content');
+                const chatTabButton = document.getElementById('chat-tab-button');
+                const usersTabButton = document.getElementById('users-tab-button');
+                const headerTitle = document.querySelector('#chat-sidebar h2');
+
+                if (tabName === 'chat') {
+                    // Show chat tab
+                    chatContent.style.display = 'flex';
+                    usersContent.style.display = 'none';
+                    chatTabButton.classList.add('active');
+                    usersTabButton.classList.remove('active');
+                    if (headerTitle) headerTitle.textContent = "Global Chat";
+
+                    // Focus on the chat input
+                    setTimeout(() => {
+                        const chatInput = document.getElementById('chat-message-input');
+                        if (chatInput) chatInput.focus();
+                    }, 100);
+                } else {
+                    // Show users tab
+                    chatContent.style.display = 'none';
+                    usersContent.style.display = 'block';
+                    chatTabButton.classList.remove('active');
+                    usersTabButton.classList.add('active');
+                    if (headerTitle) headerTitle.textContent = "Online Users";
+                }
+            }
+
+            // Initialize chat input functionality when the DOM is loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                const chatInput = document.getElementById('chat-message-input');
+                const sendButton = document.getElementById('send-message-button');
+                const chatForm = document.getElementById('chat-form');
+                const chatMessages = document.getElementById('chat-messages');
+
+                // Enable/disable send button based on input
+                if (chatInput && sendButton) {
+                    // Initially disable the button
+                    sendButton.disabled = true;
+
+                    chatInput.addEventListener('input', function() {
+                        sendButton.disabled = !this.value.trim();
+                    });
+
+                    // Enable keyboard shortcut (Enter to send)
+                    chatInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey && !sendButton.disabled) {
+                            e.preventDefault();
+                            chatForm.requestSubmit();
+                        }
+                    });
+                }
+
+                // Scroll to bottom of messages when new message is added
+                if (chatForm && chatMessages) {
+                    chatForm.addEventListener('htmx:afterSwap', function() {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        chatInput.value = '';
+                        sendButton.disabled = true;
+                        chatInput.focus();
+                    });
+
+                    // Initial scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            });
+            """),
 
             # Content
             Div(
@@ -427,20 +497,28 @@ def GlobalChat(is_open=False):
                                 placeholder="Type a message...",
                                 cls="chat-input",
                                 id="chat-message-input",
-                                name="message"
+                                name="message",
+                                autocomplete="off"
                             ),
                             Button(
                                 SendIcon(),
                                 type="submit",
                                 cls="chat-send-button",
                                 id="send-message-button",
-                                disabled=True
+                                disabled=True,
+                                title="Send message"
                             ),
                             hx_post="/send_message",
                             hx_target="#chat-messages",
                             hx_swap="beforeend",
+                            hx_indicator="#chat-sending-indicator",
                             cls="chat-input-form",
                             id="chat-form"
+                        ),
+                        Div(
+                            Span("Sending...", cls="chat-sending-text"),
+                            cls="chat-sending-indicator",
+                            id="chat-sending-indicator"
                         ),
                         cls="chat-input-container"
                     ),
@@ -642,45 +720,17 @@ def get_toggle_js():
 
         // Toggle between chat and users tabs
         if (chatTabButton && usersTabButton) {
-            chatTabButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                chatContent.style.display = 'flex';
-                usersContent.style.display = 'none';
-                chatTabButton.classList.add('active');
-                usersTabButton.classList.remove('active');
-                document.querySelector('#chat-sidebar h2').textContent = "Global Chat";
-                htmx.trigger(chatTabButton, 'htmx:trigger');
-            });
+            // Let HTMX handle the tab switching
+            // We'll just add some additional behavior after the HTMX request completes
 
-            usersTabButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                chatContent.style.display = 'none';
-                usersContent.style.display = 'block';
-                usersTabButton.classList.add('active');
-                chatTabButton.classList.remove('active');
-                document.querySelector('#chat-sidebar h2').textContent = "Online Users";
-                htmx.trigger(usersTabButton, 'htmx:trigger');
-            });
-
-
-            usersTabButton.addEventListener('click', function() {
-                if (activeTab !== "users") {
-                    activeTab = "users";
-
-                    // Update tab styling
-                    usersTabButton.classList.add('text-[#00ff00]', 'border-b-2', 'border-[#00ff00]');
-                    usersTabButton.classList.remove('text-gray-400', 'hover:text-white');
-
-                    chatTabButton.classList.remove('text-[#00ff00]', 'border-b-2', 'border-[#00ff00]');
-                    chatTabButton.classList.add('text-gray-400', 'hover:text-white');
-
-                    // Show users content
-                    document.getElementById('chat-content').style.display = 'none';
-                    document.getElementById('users-content').style.display = 'block';
-
-                    // Update header text
-                    const headerText = document.querySelector('#chat-sidebar h2');
-                    if (headerText) headerText.textContent = "Online Users";
+            document.body.addEventListener('htmx:afterSwap', function(event) {
+                // Check if the event target is the chat content wrapper
+                if (event.detail.target.id === 'chat-content-wrapper') {
+                    // Scroll to bottom of chat messages if chat tab is active
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages && chatMessages.parentElement.style.display !== 'none') {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
                 }
             });
         }
@@ -1090,4 +1140,47 @@ def DashboardLayout(username, state, content):
             cls="main-content"
         ),
         cls="dashboard-container dashboard-page"
+    )
+
+# Route handler for sending messages
+
+@rt('/send_message', methods=['POST'])
+def send_message(session, req):
+    """
+    Route handler for sending a message in the chat.
+    This endpoint is called via HTMX when a message is submitted.
+    """
+    # In a real application, you would save the message to a database
+    # and potentially broadcast it to other users via WebSockets
+
+    # For now, we'll just return a new message element
+    message_text = req.form.get('message', '')
+    if not message_text:
+        return ""
+
+    # Create a timestamp for the message
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%H:%M")
+
+    # Get the username from the session or use a default
+    username = session.get('auth', 'You')
+
+    # Return a new message element
+    return Div(
+        Div(
+            Img(src="\img\code-avatar.svg", alt=f"{username}'s avatar", cls="message-avatar"),
+            Div(cls="avatar-status online"),
+            cls="message-avatar-container"
+        ),
+        Div(
+            Div(
+                Span(username, cls="message-sender"),
+                Span(timestamp, cls="message-time"),
+                cls="message-header"
+            ),
+            P(message_text, cls="message-text"),
+            cls="message-content"
+        ),
+        cls="chat-message",
+        id=f"message-new-{int(datetime.now().timestamp())}"
     )

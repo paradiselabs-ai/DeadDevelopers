@@ -414,6 +414,24 @@
   border-radius: 50%;
 }
 
+/* Sending indicator */
+.chat-sending-indicator {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--chat-text-muted);
+}
+
+.chat-sending-indicator.htmx-request {
+  display: flex;
+}
+
+.chat-sending-text {
+  margin-left: 0.25rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .chat-sidebar {
