@@ -591,16 +591,17 @@ def GlobalChat(is_open=False):
                         // Ensure the button maintains its styling from CSS
                         sendButton.style.backgroundColor = 'var(--chat-accent)';
                         sendButton.style.color = '#000';
+                        sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
 
                         // Add a subtle pop animation when the button is restored
                         if (!sendButton.disabled) {
                             sendButton.animate([
-                                { transform: 'scale(0.95)' },
-                                { transform: 'scale(1.05)' },
-                                { transform: 'scale(1)' }
+                                { transform: 'scale(0.92)', boxShadow: '0 1px 3px rgba(0, 255, 0, 0.2)' },
+                                { transform: 'scale(1.05)', boxShadow: '0 3px 10px rgba(0, 255, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2)' },
+                                { transform: 'scale(1)', boxShadow: '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }
                             ], {
-                                duration: 300,
-                                easing: 'ease-out'
+                                duration: 350,
+                                easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                             });
                         }
                     }
@@ -647,14 +648,15 @@ def GlobalChat(is_open=False):
                         // Ensure the button maintains its styling from CSS
                         sendButton.style.backgroundColor = 'var(--chat-accent)';
                         sendButton.style.color = '#000';
+                        sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
 
                         // Add a subtle shake animation to indicate error
                         sendButton.animate([
-                            { transform: 'translateX(-3px)' },
-                            { transform: 'translateX(3px)' },
-                            { transform: 'translateX(-2px)' },
-                            { transform: 'translateX(2px)' },
-                            { transform: 'translateX(0)' }
+                            { transform: 'translateX(-4px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
+                            { transform: 'translateX(4px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
+                            { transform: 'translateX(-3px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
+                            { transform: 'translateX(3px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
+                            { transform: 'translateX(0)', boxShadow: '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }
                         ], {
                             duration: 400,
                             easing: 'ease-out'
@@ -675,9 +677,36 @@ def GlobalChat(is_open=False):
                     sendButton.disabled = true;
                     sendButton.style.backgroundColor = 'var(--chat-accent)';
                     sendButton.style.color = '#000';
+                    sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
+
+                    // Add focus effect to input
+                    chatInput.addEventListener('focus', function() {
+                        this.style.boxShadow = '0 0 0 2px rgba(0, 255, 0, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05)';
+                        this.style.backgroundColor = 'rgba(37, 37, 37, 0.95)';
+                    });
+
+                    chatInput.addEventListener('blur', function() {
+                        this.style.boxShadow = 'inset 0 1px 2px rgba(0, 0, 0, 0.1)';
+                        this.style.backgroundColor = 'var(--chat-input-bg)';
+                    });
 
                     chatInput.addEventListener('input', function() {
                         sendButton.disabled = !this.value.trim();
+
+                        // Add subtle animation when enabling the button
+                        if (!sendButton.disabled && sendButton.dataset.wasDisabled === 'true') {
+                            sendButton.animate([
+                                { transform: 'scale(0.95)', opacity: 0.7 },
+                                { transform: 'scale(1.05)', opacity: 1 },
+                                { transform: 'scale(1)', opacity: 1 }
+                            ], {
+                                duration: 250,
+                                easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                            });
+                        }
+
+                        // Track disabled state
+                        sendButton.dataset.wasDisabled = sendButton.disabled.toString();
                     });
 
                     // Enable keyboard shortcut (Enter to send)
