@@ -138,6 +138,39 @@ def MessageIcon():
         strokeWidth="2", fill="currentColor"
     )
 
+def MessageSquareIcon(width=20, height=20):
+    return Svg(
+        tag("path", d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"),
+        viewBox="0 0 24 24", width=width, height=height, stroke="currentColor",
+        strokeWidth="2", fill="none"
+    )
+
+def SendIcon():
+    return Svg(
+        tag("line", x1="22", y1="2", x2="11", y2="13"),
+        tag("polygon", points="22 2 15 22 11 13 2 9 22 2"),
+        viewBox="0 0 24 24", width="18", height="18", stroke="currentColor",
+        strokeWidth="2", fill="none"
+    )
+
+def UsersIcon(width=16, height=16):
+    return Svg(
+        tag("path", d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"),
+        tag("circle", cx="9", cy="7", r="4"),
+        tag("path", d="M23 21v-2a4 4 0 0 0-3-3.87"),
+        tag("path", d="M16 3.13a4 4 0 0 1 0 7.75"),
+        viewBox="0 0 24 24", width=width, height=height, stroke="currentColor",
+        strokeWidth="2", fill="none"
+    )
+
+def XIcon():
+    return Svg(
+        tag("line", x1="18", y1="6", x2="6", y2="18"),
+        tag("line", x1="6", y1="6", x2="18", y2="18"),
+        viewBox="0 0 24 24", width="20", height="20", stroke="currentColor",
+        strokeWidth="2", fill="none"
+    )
+
 def StarIcon(width=15, height=15):
     return Svg(
         tag("polygon", points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"),
@@ -213,6 +246,228 @@ def CalendarIcon():
         strokeWidth="2", fill="none"
     )
 
+# Global Chat CSS
+global_chat_css = Link(rel='stylesheet', href='/css/global-chat.css', type='text/css')
+
+# Mock data for chat messages and users
+def get_mock_messages():
+    """Return mock chat messages for the global chat"""
+    return [
+        {
+            "id": "msg1",
+            "user": {"name": "Alex Rivera", "avatar": "\img\code-avatar.svg", "online": True},
+            "message": "Has anyone tried the new AI model training pipeline?",
+            "timestamp": "12:30"
+        },
+        {
+            "id": "msg2",
+            "user": {"name": "Jamie Liu", "avatar": "\img\code-avatar.svg", "online": True},
+            "message": "Yes, it's much faster than the previous version. I was able to train my model in half the time.",
+            "timestamp": "12:35"
+        },
+        {
+            "id": "msg3",
+            "user": {"name": "Taylor Swift", "avatar": "\img\code-avatar.svg", "online": False},
+            "message": "I'm still having issues with the Discord API rate limiting. Any workarounds?",
+            "timestamp": "12:45"
+        },
+        {
+            "id": "msg4",
+            "user": {"name": "Morgan Reed", "avatar": "\img\code-avatar.svg", "online": True},
+            "message": "Try implementing a queue system with exponential backoff. I can share my code if you need it.",
+            "timestamp": "12:50"
+        },
+        {
+            "id": "msg5",
+            "user": {"name": "DeadDev_42", "avatar": "\img\code-avatar.svg", "online": True},
+            "message": "That would be great! Can you post it in the DeadBot repo as a gist?",
+            "timestamp": "12:55"
+        }
+    ]
+
+def get_mock_users():
+    """Return mock online users for the global chat"""
+    return [
+        {"id": "1", "name": "Alex Rivera", "avatar": "\img\code-avatar.svg", "status": "online"},
+        {"id": "2", "name": "Jamie Liu", "avatar": "\img\code-avatar.svg", "status": "online"},
+        {"id": "3", "name": "Taylor Swift", "avatar": "\img\code-avatar.svg", "status": "away"},
+        {"id": "4", "name": "Morgan Reed", "avatar": "\img\code-avatar.svg", "status": "busy"},
+        {"id": "5", "name": "Jordan Davis", "avatar": "\img\code-avatar.svg", "status": "online"},
+        {"id": "6", "name": "Casey Kim", "avatar": "\img\code-avatar.svg", "status": "online"},
+        {"id": "7", "name": "Riley Johnson", "avatar": "\img\code-avatar.svg", "status": "away"}
+    ]
+
+def GlobalChat(is_open=False):
+    """
+    Global Chat component that provides a chat sidebar with tabs for messages and online users.
+
+    Args:
+        is_open: Boolean indicating if the chat sidebar should be open by default
+
+    Returns:
+        A Div containing the global chat component with the global_chat_css
+    """
+    # Get mock data
+    messages = get_mock_messages()
+    online_users = get_mock_users()
+    online_count = len([user for user in online_users if user["status"] == "online"])
+
+    # Create message elements
+    message_elements = [
+        Div(
+            Div(
+                Img(src=msg["user"]["avatar"] or "/placeholder.svg", alt=f"{msg['user']['name']}'s avatar", cls="message-avatar"),
+                Div(cls="avatar-status online") if msg["user"]["online"] else None,
+                cls="message-avatar-container"
+            ),
+            Div(
+                Div(
+                    Span(msg["user"]["name"], cls="message-sender"),
+                    Span(msg["timestamp"], cls="message-time"),
+                    cls="message-header"
+                ),
+                P(msg["message"], cls="message-text"),
+                cls="message-content"
+            ),
+            cls="chat-message",
+            id=f"message-{msg['id']}"
+        ) for msg in messages
+    ]
+
+    # Create user elements
+    user_elements = [
+        Div(
+            Div(
+                Img(src=user["avatar"] or "/placeholder.svg", alt=f"{user['name']}'s avatar", cls="user-avatar"),
+                Div(cls=f"status-indicator {user['status']}"),
+                cls="user-avatar-container"
+            ),
+            Div(
+                Div(
+                    Span(user["name"], cls="user-name"),
+                    Span(user["status"], cls="user-status-text"),
+                    cls="user-info-header"
+                ),
+                P("Active now" if user["status"] == "online" else "", cls="user-last-seen"),
+                cls="user-info"
+            ),
+            cls="user-item",
+            id=f"user-{user['id']}"
+        ) for user in online_users
+    ]
+
+    # Chat component structure
+    return Div(global_chat_css,
+        # Chat overlay
+        Div(
+            cls=f"chat-overlay {'opacity-100 pointer-events-auto' if is_open else 'hidden'}",
+            id="chat-overlay",
+            hx_swap_oob="true"
+        ),
+
+        # Chat sidebar
+        Div(
+            # Header
+            Div(
+                Div(
+                    H2("Global Chat", cls="chat-title"),
+                    Div(f"{online_count} online", cls="online-badge"),
+                    cls="chat-header-title"
+                ),
+                Button(
+                    XIcon(),
+                    cls="chat-close-button",
+                    id="close-chat-button"
+                ),
+                cls="chat-header"
+            ),
+
+            # Tabs
+            Div(
+                Button(
+                    Div(
+                        MessageSquareIcon(width=16, height=16),
+                        Span("Chat"),
+                        cls="chat-tab-content"
+                    ),
+                    cls="chat-tab active",
+                    id="chat-tab-button",
+                    hx_get="/chat_tab",  # Dummy endpoint for tab switch
+                    hx_target="#chat-content",
+                    hx_swap="innerHTML"
+                ),
+                Button(
+                    Div(
+                        UsersIcon(width=16, height=16),
+                        Span("Users"),
+                        cls="chat-tab"
+                    ),
+                    cls="chat-tab",
+                    id="users-tab-button",
+                    hx_get="/users_tab",  # Dummy endpoint for tab switch
+                    hx_target="#users-content",
+                    hx_swap="innerHTML"
+                ),
+                cls="chat-tabs"
+            ),
+
+            # Content
+            Div(
+                # Messages tab
+                Div(
+                    Div(
+                        *message_elements,
+                        id="chat-messages",
+                        cls="chat-messages"
+                    ),
+                    Div(
+                        Form(
+                            Input(
+                                type="text",
+                                placeholder="Type a message...",
+                                cls="chat-input",
+                                id="chat-message-input",
+                                name="message"
+                            ),
+                            Button(
+                                SendIcon(),
+                                type="submit",
+                                cls="chat-send-button",
+                                id="send-message-button",
+                                disabled=True
+                            ),
+                            hx_post="/send_message",
+                            hx_target="#chat-messages",
+                            hx_swap="beforeend",
+                            cls="chat-input-form",
+                            id="chat-form"
+                        ),
+                        cls="chat-input-container"
+                    ),
+                    id="chat-content",
+                    cls="chat-content",
+                    style="display: flex;"
+                ),
+
+                # Users tab
+                Div(
+                    *user_elements,
+                    id="users-content",
+                    cls="users-list",
+                    style="display: none;"
+                ),
+
+                cls="chat-content-wrapper"
+            ),
+
+            cls=f"chat-sidebar {'visible' if is_open else 'hidden'}",
+            id="chat-sidebar",
+            style=f"transform: translateX({'0' if is_open else '100%'});"
+        ),
+        cls="global-chat-container",
+        hx_ext="global-chat"  # Custom extension for additional behavior if needed
+    )
+
 # JavaScript for toggling sidebar and dropdowns
 def get_toggle_js():
     return """
@@ -225,6 +480,18 @@ def get_toggle_js():
         const notificationDropdown = document.querySelector('.notification-dropdown');
         const userMenuButton = document.getElementById('user-menu-button');
         const userDropdown = document.querySelector('.user-dropdown');
+
+        // Chat elements
+        const chatButton = document.getElementById('chat-button');
+        const chatSidebar = document.getElementById('chat-sidebar');
+        const chatOverlay = document.getElementById('chat-overlay');
+        const closeChatButton = document.getElementById('close-chat-button');
+        const chatTabButton = document.getElementById('chat-tab-button');
+        const usersTabButton = document.getElementById('users-tab-button');
+        const chatContent = document.getElementById('chat-content');
+        const chatForm = document.getElementById('chat-form');
+        const chatMessageInput = document.getElementById('chat-message-input');
+        const chatMessages = document.getElementById('chat-messages');
 
         // Check if mobile
         const checkMobile = () => {
@@ -265,24 +532,32 @@ def get_toggle_js():
                 // Close dropdowns when sidebar is toggled
                 if (notificationDropdown) notificationDropdown.style.display = 'none';
                 if (userDropdown) userDropdown.style.display = 'none';
+                // Close chat sidebar when main sidebar is toggled
+                if (chatSidebar) chatSidebar.style.transform = 'translateX(100%)';
+                if (chatOverlay) chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
             });
         }
-        
+
         // Mobile menu button
-        if (menuButton) {
-            menuButton.addEventListener('click', function() {
-                if (sidebar.classList.contains('mobile-closed')) {
-                    sidebar.classList.remove('mobile-closed');
-                    sidebar.classList.add('mobile-open');
-                    overlay.classList.add('active');
-                } else {
-                    sidebar.classList.remove('mobile-open');
-                    sidebar.classList.add('mobile-closed');
-                    overlay.classList.remove('active');
-                }
-            });
+        if (chatButton) {
+        chatButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = chatSidebar.style.transform === 'translateX(0px)';
+            if (isVisible) {
+                chatSidebar.style.transform = 'translateX(100%)';
+                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+            } else {
+                chatSidebar.style.transform = 'translateX(0)';
+                chatOverlay.classList.add('opacity-100', 'pointer-events-auto');
+                // Close other dropdowns
+                if (notificationDropdown) notificationDropdown.style.display = 'none';
+                if (userDropdown) userDropdown.style.display = 'none';
+                // Scroll to bottom
+                if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
         }
-        
+
         // Close sidebar when clicking outside on mobile or desktop
         if (overlay) {
             overlay.addEventListener('click', function() {
@@ -297,7 +572,7 @@ def get_toggle_js():
                 }
             });
         }
-        
+
         // Toggle notification dropdown
         if (notificationButton) {
             notificationButton.addEventListener('click', function(e) {
@@ -305,9 +580,12 @@ def get_toggle_js():
                 const isVisible = notificationDropdown.style.display === 'block';
                 notificationDropdown.style.display = isVisible ? 'none' : 'block';
                 if (userDropdown) userDropdown.style.display = 'none';
+                // Close chat sidebar when notification dropdown is opened
+                if (chatSidebar) chatSidebar.style.transform = 'translateX(100%)';
+                if (chatOverlay) chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
             });
         }
-        
+
         // Toggle user menu dropdown
         if (userMenuButton) {
             userMenuButton.addEventListener('click', function(e) {
@@ -315,9 +593,161 @@ def get_toggle_js():
                 const isVisible = userDropdown.style.display === 'block';
                 userDropdown.style.display = isVisible ? 'none' : 'block';
                 if (notificationDropdown) notificationDropdown.style.display = 'none';
+                // Close chat sidebar when user dropdown is opened
+                if (chatSidebar) chatSidebar.style.transform = 'translateX(100%)';
+                if (chatOverlay) chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
             });
         }
-        
+
+        // Toggle chat sidebar
+        if (chatButton) {
+            chatButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isVisible = chatSidebar.style.transform === 'translateX(0px)';
+
+                if (isVisible) {
+                    chatSidebar.style.transform = 'translateX(100%)';
+                    chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                } else {
+                    chatSidebar.style.transform = 'translateX(0)';
+                    chatOverlay.classList.add('opacity-100', 'pointer-events-auto');
+
+                    // Close other dropdowns
+                    if (notificationDropdown) notificationDropdown.style.display = 'none';
+                    if (userDropdown) userDropdown.style.display = 'none';
+
+                    // Scroll to bottom of chat messages
+                    if (chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }
+            });
+        }
+
+        // Close chat sidebar with close button
+        if (closeChatButton) {
+            closeChatButton.addEventListener('click', function() {
+                chatSidebar.style.transform = 'translateX(100%)';
+                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+            });
+        }
+
+        // Close chat sidebar when clicking overlay
+        if (chatOverlay) {
+            chatOverlay.addEventListener('click', function() {
+                chatSidebar.style.transform = 'translateX(100%)';
+                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+            });
+        }
+
+        // Toggle between chat and users tabs
+        if (chatTabButton && usersTabButton) {
+            chatTabButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                chatContent.style.display = 'flex';
+                usersContent.style.display = 'none';
+                chatTabButton.classList.add('active');
+                usersTabButton.classList.remove('active');
+                document.querySelector('#chat-sidebar h2').textContent = "Global Chat";
+                htmx.trigger(chatTabButton, 'htmx:trigger');
+            });
+
+            usersTabButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                chatContent.style.display = 'none';
+                usersContent.style.display = 'block';
+                usersTabButton.classList.add('active');
+                chatTabButton.classList.remove('active');
+                document.querySelector('#chat-sidebar h2').textContent = "Online Users";
+                htmx.trigger(usersTabButton, 'htmx:trigger');
+            });
+
+
+            usersTabButton.addEventListener('click', function() {
+                if (activeTab !== "users") {
+                    activeTab = "users";
+
+                    // Update tab styling
+                    usersTabButton.classList.add('text-[#00ff00]', 'border-b-2', 'border-[#00ff00]');
+                    usersTabButton.classList.remove('text-gray-400', 'hover:text-white');
+
+                    chatTabButton.classList.remove('text-[#00ff00]', 'border-b-2', 'border-[#00ff00]');
+                    chatTabButton.classList.add('text-gray-400', 'hover:text-white');
+
+                    // Show users content
+                    document.getElementById('chat-content').style.display = 'none';
+                    document.getElementById('users-content').style.display = 'block';
+
+                    // Update header text
+                    const headerText = document.querySelector('#chat-sidebar h2');
+                    if (headerText) headerText.textContent = "Online Users";
+                }
+            });
+        }
+
+        // Handle chat input and form submission
+        if (chatForm && chatMessageInput) {
+            // Enable/disable send button based on input
+            chatMessageInput.addEventListener('input', function() {
+                const messageText = this.value.trim();
+                const sendButton = document.getElementById('send-message-button');
+
+                if (sendButton) {
+                    if (messageText) {
+                        sendButton.removeAttribute('disabled');
+                    } else {
+                        sendButton.setAttribute('disabled', 'true');
+                    }
+                }
+            });
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const messageText = chatMessageInput.value.trim();
+                if (!messageText) return;
+
+                // Create a new message element
+                const messageTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const messageHTML = `
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="relative">
+                                <img src="/img/code-avatar.svg?height=32&width=32" alt="DeadDev_42" class="w-8 h-8 rounded-full bg-[#252525]">
+                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#1a1a1a]"></div>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium text-sm text-white">DeadDev_42</span>
+                                <span class="text-xs text-gray-500">${messageTime}</span>
+                            </div>
+                            <p class="text-sm text-gray-300 mt-1">${messageText}</p>
+                        </div>
+                    </div>
+                `;
+
+                // Add message to chat
+                const messageDiv = document.createElement('div');
+                messageDiv.innerHTML = messageHTML;
+                chatMessages.appendChild(messageDiv);
+
+                // Clear input and scroll to bottom
+                chatMessageInput.value = '';
+
+                // Disable send button again
+                const sendButton = document.getElementById('send-message-button');
+                if (sendButton) {
+                    sendButton.setAttribute('disabled', 'true');
+                }
+
+                // Scroll to bottom of messages
+                const messagesEnd = document.createElement('div');
+                chatMessages.appendChild(messagesEnd);
+                messagesEnd.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+
         // Close dropdowns when clicking elsewhere
         document.addEventListener('click', function() {
             if (notificationDropdown) notificationDropdown.style.display = 'none';
@@ -491,6 +921,7 @@ def DashboardLayout(username, state, content):
 
     # Create header right content
     header_right = Div(
+    Button(MessageSquareIcon(), cls="chat-button", id="chat-button"),
         Div(
             Button(
                 NotificationIcon(),
@@ -498,7 +929,6 @@ def DashboardLayout(username, state, content):
                 cls="notification-button",
                 id="notification-button"
             ),
-
             # Notification Dropdown
             Div(
                 Div(
@@ -565,7 +995,6 @@ def DashboardLayout(username, state, content):
             ),
             cls="notification-container"
         ),
-
         Div(
             Button(
                 Div(
@@ -637,6 +1066,7 @@ def DashboardLayout(username, state, content):
             ),
             cls="user-menu-container"
         ),
+        GlobalChat(is_open=True),
         cls="header-right"
     )
 

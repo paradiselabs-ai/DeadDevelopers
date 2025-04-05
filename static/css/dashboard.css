@@ -436,10 +436,11 @@
   border-color: var(--border-hover);
 }
 
-.dashboard-page .header-right {
+.header-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .dashboard-page .notification-container {
