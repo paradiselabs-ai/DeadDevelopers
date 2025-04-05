@@ -468,19 +468,45 @@ def GlobalChat(is_open=False):
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.text())
-                .then(html => {
-                    // Add the new message to the chat
-                    if (chatMessages) {
-                        chatMessages.insertAdjacentHTML('beforeend', html);
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
                     }
+                    return response.text();
+                })
+                .then(html => {
+                    // Check if the response contains an error message
+                    if (html.includes('error-message')) {
+                        // Extract the error message
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        const errorMsg = tempDiv.textContent || 'Unknown error';
+                        console.error('Server error:', errorMsg);
 
-                    // Clear the input
-                    chatInput.value = '';
+                        // Add an error message to the chat
+                        if (chatMessages) {
+                            const errorElement = document.createElement('div');
+                            errorElement.className = 'chat-message system-message';
+                            errorElement.innerHTML = `<div class="message-content"><p class="message-text error-text">Failed to send message: ${errorMsg}</p></div>`;
+                            chatMessages.appendChild(errorElement);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } else if (html.trim()) {
+                        // Add the new message to the chat
+                        if (chatMessages) {
+                            chatMessages.insertAdjacentHTML('beforeend', html);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        // Clear the input
+                        chatInput.value = '';
+                    }
 
                     // Hide the sending indicator
                     if (indicator) indicator.classList.remove('htmx-request');
+
+                    // Re-enable the button if there's text in the input
+                    if (sendButton) sendButton.disabled = !chatInput.value.trim();
 
                     // Focus the input again
                     chatInput.focus();
@@ -488,11 +514,20 @@ def GlobalChat(is_open=False):
                 .catch(error => {
                     console.error('Error sending message:', error);
 
+                    // Add an error message to the chat
+                    if (chatMessages) {
+                        const errorElement = document.createElement('div');
+                        errorElement.className = 'chat-message system-message';
+                        errorElement.innerHTML = `<div class="message-content"><p class="message-text error-text">Failed to send message: ${error.message}</p></div>`;
+                        chatMessages.appendChild(errorElement);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+
                     // Hide the sending indicator
                     if (indicator) indicator.classList.remove('htmx-request');
 
-                    // Re-enable the button
-                    if (sendButton) sendButton.disabled = false;
+                    // Re-enable the button if there's text in the input
+                    if (sendButton) sendButton.disabled = !chatInput.value.trim();
                 });
             }
 
@@ -1188,18 +1223,20 @@ def DashboardLayout(username, state, content):
 # Route handler for sending messages
 
 @rt('/chat_send', methods=['POST'])
-def chat_send_message(request):
+async def chat_send_message(request):
     """
     Route handler for sending a message in the chat.
-    This endpoint is called via HTMX when a message is submitted.
+    This endpoint is called via fetch API when a message is submitted.
     """
     # In a real application, you would save the message to a database
     # and potentially broadcast it to other users via WebSockets
 
     # For now, we'll just return a new message element
     try:
-        # Get the message text from the form
-        message_text = request.form.get('message', '')
+        # Get form data
+        form_data = await request.form()
+        message_text = form_data.get('message', '')
+
         if not message_text:
             return ""
 
