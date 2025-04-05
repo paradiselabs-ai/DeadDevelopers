@@ -445,6 +445,13 @@ def GlobalChat(is_open=False):
             // Store the send icon SVG for reuse
             const sendIconSvg = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
 
+            // Function to reset button to its default state
+            function resetButtonToDefaultState(button) {
+                // Remove any inline styles that might interfere with CSS
+                button.removeAttribute('style');
+                button.className = 'chat-send-button';
+            }
+
             // Track message sending metrics
             let messagesSent = 0;
             let lastMessageSentTime = 0;
@@ -485,10 +492,13 @@ def GlobalChat(is_open=False):
 
                 // Disable the button and change its appearance while sending
                 if (sendButton) {
+                    // First reset to default state to clear any inline styles
+                    resetButtonToDefaultState(sendButton);
+
+                    // Then update to sending state
                     sendButton.disabled = true;
                     sendButton.className = 'chat-send-button sending';
                     sendButton.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10" opacity="0.3"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>';
-                    sendButton.style.opacity = '0.8';
                 }
 
                 // Create form data
@@ -583,22 +593,19 @@ def GlobalChat(is_open=False):
 
                     // Restore the send button with a subtle animation
                     if (sendButton) {
-                        sendButton.className = 'chat-send-button';
+                        // Reset button to default state
+                        resetButtonToDefaultState(sendButton);
+
+                        // Update state
                         sendButton.disabled = !chatInput.value.trim();
                         sendButton.innerHTML = sendIconSvg;
-                        sendButton.style.opacity = '1';
-
-                        // Ensure the button maintains its styling from CSS
-                        sendButton.style.backgroundColor = 'var(--chat-accent)';
-                        sendButton.style.color = '#000';
-                        sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
 
                         // Add a subtle pop animation when the button is restored
                         if (!sendButton.disabled) {
                             sendButton.animate([
-                                { transform: 'scale(0.92)', boxShadow: '0 1px 3px rgba(0, 255, 0, 0.2)' },
-                                { transform: 'scale(1.05)', boxShadow: '0 3px 10px rgba(0, 255, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2)' },
-                                { transform: 'scale(1)', boxShadow: '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }
+                                { transform: 'scale(0.92)' },
+                                { transform: 'scale(1.05)' },
+                                { transform: 'scale(1)' }
                             ], {
                                 duration: 350,
                                 easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
@@ -640,23 +647,20 @@ def GlobalChat(is_open=False):
 
                     // Restore the send button with error state indication
                     if (sendButton) {
-                        sendButton.className = 'chat-send-button';
+                        // Reset button to default state
+                        resetButtonToDefaultState(sendButton);
+
+                        // Update state
                         sendButton.disabled = !chatInput.value.trim();
                         sendButton.innerHTML = sendIconSvg;
-                        sendButton.style.opacity = '1';
-
-                        // Ensure the button maintains its styling from CSS
-                        sendButton.style.backgroundColor = 'var(--chat-accent)';
-                        sendButton.style.color = '#000';
-                        sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
 
                         // Add a subtle shake animation to indicate error
                         sendButton.animate([
-                            { transform: 'translateX(-4px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
-                            { transform: 'translateX(4px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
-                            { transform: 'translateX(-3px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
-                            { transform: 'translateX(3px)', boxShadow: '0 2px 8px rgba(255, 77, 77, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' },
-                            { transform: 'translateX(0)', boxShadow: '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }
+                            { transform: 'translateX(-4px)' },
+                            { transform: 'translateX(4px)' },
+                            { transform: 'translateX(-3px)' },
+                            { transform: 'translateX(3px)' },
+                            { transform: 'translateX(0)' }
                         ], {
                             duration: 400,
                             easing: 'ease-out'
@@ -673,21 +677,17 @@ def GlobalChat(is_open=False):
 
                 // Enable/disable send button based on input
                 if (chatInput && sendButton) {
-                    // Initially disable the button and ensure styling
+                    // Reset button to default state and disable it
+                    resetButtonToDefaultState(sendButton);
                     sendButton.disabled = true;
-                    sendButton.style.backgroundColor = 'var(--chat-accent)';
-                    sendButton.style.color = '#000';
-                    sendButton.style.boxShadow = '0 2px 8px rgba(0, 255, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)';
 
-                    // Add focus effect to input
+                    // Add focus/blur classes instead of inline styles
                     chatInput.addEventListener('focus', function() {
-                        this.style.boxShadow = '0 0 0 2px rgba(0, 255, 0, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05)';
-                        this.style.backgroundColor = 'rgba(37, 37, 37, 0.95)';
+                        this.classList.add('chat-input-focused');
                     });
 
                     chatInput.addEventListener('blur', function() {
-                        this.style.boxShadow = 'inset 0 1px 2px rgba(0, 0, 0, 0.1)';
-                        this.style.backgroundColor = 'var(--chat-input-bg)';
+                        this.classList.remove('chat-input-focused');
                     });
 
                     chatInput.addEventListener('input', function() {
