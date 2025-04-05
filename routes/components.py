@@ -410,6 +410,7 @@ def GlobalChat(is_open=False):
 
             # Add JavaScript for tab switching and chat input functionality
             Script("""
+            // Function to switch between chat tabs
             function switchChatTab(tabName) {
                 // Get elements
                 const chatContent = document.getElementById('chat-content');
@@ -441,11 +442,64 @@ def GlobalChat(is_open=False):
                 }
             }
 
+            // Function to send a chat message using fetch API
+            function sendChatMessage() {
+                const chatInput = document.getElementById('chat-message-input');
+                const sendButton = document.getElementById('send-message-button');
+                const chatMessages = document.getElementById('chat-messages');
+                const indicator = document.getElementById('chat-sending-indicator');
+
+                // Get the message text
+                const messageText = chatInput.value.trim();
+                if (!messageText) return;
+
+                // Show the sending indicator
+                if (indicator) indicator.classList.add('htmx-request');
+
+                // Disable the button while sending
+                if (sendButton) sendButton.disabled = true;
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('message', messageText);
+
+                // Send the request
+                fetch('/chat_send', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Add the new message to the chat
+                    if (chatMessages) {
+                        chatMessages.insertAdjacentHTML('beforeend', html);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+
+                    // Clear the input
+                    chatInput.value = '';
+
+                    // Hide the sending indicator
+                    if (indicator) indicator.classList.remove('htmx-request');
+
+                    // Focus the input again
+                    chatInput.focus();
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+
+                    // Hide the sending indicator
+                    if (indicator) indicator.classList.remove('htmx-request');
+
+                    // Re-enable the button
+                    if (sendButton) sendButton.disabled = false;
+                });
+            }
+
             // Initialize chat input functionality when the DOM is loaded
             document.addEventListener('DOMContentLoaded', function() {
                 const chatInput = document.getElementById('chat-message-input');
                 const sendButton = document.getElementById('send-message-button');
-                const chatForm = document.getElementById('chat-form');
                 const chatMessages = document.getElementById('chat-messages');
 
                 // Enable/disable send button based on input
@@ -461,21 +515,13 @@ def GlobalChat(is_open=False):
                     chatInput.addEventListener('keydown', function(e) {
                         if (e.key === 'Enter' && !e.shiftKey && !sendButton.disabled) {
                             e.preventDefault();
-                            chatForm.requestSubmit();
+                            sendChatMessage();
                         }
                     });
                 }
 
-                // Scroll to bottom of messages when new message is added
-                if (chatForm && chatMessages) {
-                    chatForm.addEventListener('htmx:afterSwap', function() {
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                        chatInput.value = '';
-                        sendButton.disabled = true;
-                        chatInput.focus();
-                    });
-
-                    // Initial scroll to bottom
+                // Initial scroll to bottom of messages
+                if (chatMessages) {
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
             });
@@ -491,7 +537,7 @@ def GlobalChat(is_open=False):
                         cls="chat-messages"
                     ),
                     Div(
-                        Form(
+                        Div(
                             Input(
                                 type="text",
                                 placeholder="Type a message...",
@@ -502,16 +548,13 @@ def GlobalChat(is_open=False):
                             ),
                             Button(
                                 SendIcon(),
-                                type="submit",
+                                type="button", # Changed to button instead of submit
                                 cls="chat-send-button",
                                 id="send-message-button",
                                 disabled=True,
-                                title="Send message"
+                                title="Send message",
+                                onclick="sendChatMessage()"
                             ),
-                            hx_post="/send_message",
-                            hx_target="#chat-messages",
-                            hx_swap="beforeend",
-                            hx_indicator="#chat-sending-indicator",
                             cls="chat-input-form",
                             id="chat-form"
                         ),
@@ -1144,8 +1187,8 @@ def DashboardLayout(username, state, content):
 
 # Route handler for sending messages
 
-@rt('/send_message', methods=['POST'])
-def send_message(session, req):
+@rt('/chat_send', methods=['POST'])
+def chat_send_message(request):
     """
     Route handler for sending a message in the chat.
     This endpoint is called via HTMX when a message is submitted.
@@ -1154,16 +1197,21 @@ def send_message(session, req):
     # and potentially broadcast it to other users via WebSockets
 
     # For now, we'll just return a new message element
-    message_text = req.form.get('message', '')
-    if not message_text:
-        return ""
+    try:
+        # Get the message text from the form
+        message_text = request.form.get('message', '')
+        if not message_text:
+            return ""
 
-    # Create a timestamp for the message
-    from datetime import datetime
-    timestamp = datetime.now().strftime("%H:%M")
+        # Create a timestamp for the message
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%H:%M")
 
-    # Get the username from the session or use a default
-    username = session.get('auth', 'You')
+        # Use a default username
+        username = "You"
+    except Exception as e:
+        # If there's an error, return a message about it
+        return Div(f"Error sending message: {str(e)}", cls="error-message")
 
     # Return a new message element
     return Div(

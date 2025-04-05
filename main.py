@@ -11,7 +11,7 @@ from routes.blog import *
 from routes.about import *
 from routes.header import SiteHeader
 from routes.email_confirmation import *
-from routes.components import send_message
+from routes.components import chat_send_message
 
 # We'll import toast setup at the end of the file
 
