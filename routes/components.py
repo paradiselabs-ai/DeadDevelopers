@@ -250,6 +250,8 @@ def CalendarIcon():
 # Global Chat CSS
 global_chat_css = Link(rel='stylesheet', href='/css/global-chat.css', type='text/css')
 
+# We don't need a separate function for global chat JS since it's already handled in get_toggle_js
+
 # Mock data for chat messages and users
 def get_mock_messages():
     """Return mock chat messages for the global chat"""
@@ -361,14 +363,14 @@ def GlobalChat(is_open=False):
 
     # Chat component structure
     return Div(global_chat_css,
-        # Chat overlay
+        # Chat overlay with transition
         Div(
             cls=f"chat-overlay {'opacity-100 pointer-events-auto' if is_open else 'hidden'}",
             id="chat-overlay",
-            hx_swap_oob="true"
+            style=f"opacity: {1 if is_open else 0}; transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;"
         ),
 
-        # Chat sidebar
+        # Chat sidebar with transition styles
         Div(
             # Header
             Div(
@@ -1025,7 +1027,7 @@ def GlobalChat(is_open=False):
 
             cls=f"chat-sidebar {'visible' if is_open else 'hidden'}",
             id="chat-sidebar",
-            style=f"transform: translateX({'0' if is_open else '100%'});"
+            style=f"transform: translateX({'0' if is_open else '100%'}); opacity: {1 if is_open else 0}; transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;"
         ),
         cls="global-chat-container",
         hx_ext="global-chat"  # Custom extension for additional behavior if needed
@@ -1101,26 +1103,6 @@ def get_toggle_js():
             });
         }
 
-        // Mobile menu button
-        if (chatButton) {
-        chatButton.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const isVisible = chatSidebar.style.transform === 'translateX(0px)';
-            if (isVisible) {
-                chatSidebar.style.transform = 'translateX(100%)';
-                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
-            } else {
-                chatSidebar.style.transform = 'translateX(0)';
-                chatOverlay.classList.add('opacity-100', 'pointer-events-auto');
-                // Close other dropdowns
-                if (notificationDropdown) notificationDropdown.style.display = 'none';
-                if (userDropdown) userDropdown.style.display = 'none';
-                // Scroll to bottom
-                if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        });
-        }
-
         // Close sidebar when clicking outside on mobile or desktop
         if (overlay) {
             overlay.addEventListener('click', function() {
@@ -1162,46 +1144,97 @@ def get_toggle_js():
             });
         }
 
-        // Toggle chat sidebar
+        // Toggle chat sidebar with smooth transitions
         if (chatButton) {
             chatButton.addEventListener('click', function(e) {
                 e.stopPropagation();
-                const isVisible = chatSidebar.style.transform === 'translateX(0px)';
+                const isVisible = chatSidebar.style.transform === 'translateX(0px)' ||
+                                 chatSidebar.classList.contains('visible');
 
                 if (isVisible) {
+                    // Close the chat sidebar with smooth transition
+                    chatSidebar.style.opacity = '0';
                     chatSidebar.style.transform = 'translateX(100%)';
-                    chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                    chatOverlay.style.opacity = '0';
+
+                    // Wait for transition to complete before hiding elements
+                    setTimeout(() => {
+                        chatSidebar.classList.remove('visible');
+                        chatSidebar.classList.add('hidden');
+                        chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                        chatOverlay.classList.add('hidden');
+                    }, 300); // Match transition duration
                 } else {
-                    chatSidebar.style.transform = 'translateX(0)';
-                    chatOverlay.classList.add('opacity-100', 'pointer-events-auto');
+                    // First make elements visible but transparent
+                    chatSidebar.classList.remove('hidden');
+                    chatSidebar.classList.add('visible');
+                    chatSidebar.style.opacity = '0';
+                    chatSidebar.style.transform = 'translateX(100%)';
+                    chatOverlay.classList.remove('hidden');
+                    chatOverlay.style.opacity = '0';
 
-                    // Close other dropdowns
-                    if (notificationDropdown) notificationDropdown.style.display = 'none';
-                    if (userDropdown) userDropdown.style.display = 'none';
+                    // Force browser to recognize the elements before animating
+                    setTimeout(() => {
+                        // Then animate them in
+                        chatSidebar.style.opacity = '1';
+                        chatSidebar.style.transform = 'translateX(0)';
+                        chatOverlay.style.opacity = '1';
+                        chatOverlay.classList.add('opacity-100', 'pointer-events-auto');
 
-                    // Scroll to bottom of chat messages
-                    if (chatMessages) {
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }
+                        // Close other dropdowns
+                        if (notificationDropdown) notificationDropdown.style.display = 'none';
+                        if (userDropdown) userDropdown.style.display = 'none';
+
+                        // Scroll to bottom of chat messages
+                        if (chatMessages) {
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    }, 10);
                 }
             });
         }
 
-        // Close chat sidebar with close button
+        // Close chat sidebar with close button - with smooth transition
         if (closeChatButton) {
             closeChatButton.addEventListener('click', function() {
+                // Animate out
+                chatSidebar.style.opacity = '0';
                 chatSidebar.style.transform = 'translateX(100%)';
-                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                chatOverlay.style.opacity = '0';
+
+                // Wait for transition to complete before hiding elements
+                setTimeout(() => {
+                    chatSidebar.classList.remove('visible');
+                    chatSidebar.classList.add('hidden');
+                    chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                    chatOverlay.classList.add('hidden');
+                }, 300); // Match transition duration
             });
         }
 
-        // Close chat sidebar when clicking overlay
+        // Close chat sidebar when clicking overlay - with smooth transition
         if (chatOverlay) {
             chatOverlay.addEventListener('click', function() {
+                // Animate out
+                chatSidebar.style.opacity = '0';
                 chatSidebar.style.transform = 'translateX(100%)';
-                chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                chatOverlay.style.opacity = '0';
+
+                // Wait for transition to complete before hiding elements
+                setTimeout(() => {
+                    chatSidebar.classList.remove('visible');
+                    chatSidebar.classList.add('hidden');
+                    chatOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                    chatOverlay.classList.add('hidden');
+                }, 300); // Match transition duration
             });
         }
+
+        // Close dropdowns when clicking elsewhere
+        document.addEventListener('click', function() {
+            if (notificationDropdown) notificationDropdown.style.display = 'none';
+            if (userDropdown) userDropdown.style.display = 'none';
+        });
 
         // Toggle between chat and users tabs
         if (chatTabButton && usersTabButton) {

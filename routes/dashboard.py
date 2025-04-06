@@ -9,12 +9,12 @@ from app import rt, app, User
 from starlette.responses import RedirectResponse
 from routes.components import (
     dashboard_css, scrollbar_styles, get_toggle_js,
-    DashboardLayout, Sidebar, Header,
+    DashboardLayout, Sidebar, Header, GlobalChat,
     PlusIcon, ArrowIcon, DotsIcon, CalendarIcon, StarIcon,
     EditProfileIcon, BillingIcon, SecurityIcon, NotificationIcon,
     TeamNotificationIcon, StarIconNotification, MessageIcon, SignOutIcon,
     SearchIcon, MenuIcon, SettingsIcon, HomeIcon, ProjectsIcon, AnalyticsIcon,
-    TeamIcon, DocsIcon
+    TeamIcon, DocsIcon, MessageSquareIcon
 )
 
 # Helper functions for generating data
