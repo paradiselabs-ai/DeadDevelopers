@@ -318,13 +318,13 @@ def GlobalChat(is_open=False):
         Div(
             Div(
                 Img(src=msg["user"]["avatar"] or "/placeholder.svg", alt=f"{msg['user']['name']}'s avatar", cls="message-avatar"),
-                Div(cls="avatar-status online") if msg["user"]["online"] else None,
-                Div("Online", cls="status-tooltip") if msg["user"]["online"] else None,
+                # Removed status indicator circle
                 cls="message-avatar-container"
             ),
             Div(
                 Div(
                     Span(msg["user"]["name"], cls="message-sender"),
+                    Span("online", cls="user-status-text online") if msg["user"]["online"] else Span("offline", cls="user-status-text offline"),
                     Span(msg["timestamp"], cls="message-time"),
                     cls="message-header"
                 ),
@@ -391,6 +391,7 @@ def GlobalChat(is_open=False):
                     Div(
                         MessageSquareIcon(width=16, height=16),
                         Span("Chat"),
+                        Div(cls="unread-indicator", id="chat-unread-indicator"),
                         cls="chat-tab-content"
                     ),
                     cls="chat-tab active",
@@ -401,7 +402,8 @@ def GlobalChat(is_open=False):
                     Div(
                         UsersIcon(width=16, height=16),
                         Span("Users"),
-                        cls="chat-tab"
+                        Div(cls="unread-indicator", id="users-unread-indicator"),
+                        cls="chat-tab-content"
                     ),
                     cls="chat-tab",
                     id="users-tab-button",
@@ -412,6 +414,47 @@ def GlobalChat(is_open=False):
 
             # Add JavaScript for tab switching and chat input functionality
             Script("""
+            // Function to handle unread indicators
+            function handleUnreadIndicators() {
+                const chatUnreadIndicator = document.getElementById('chat-unread-indicator');
+                const usersUnreadIndicator = document.getElementById('users-unread-indicator');
+                let currentTab = 'chat'; // Default active tab
+
+                // Function to show unread indicator for a specific tab
+                function showUnreadIndicator(tab) {
+                    if (tab === 'chat' && currentTab !== 'chat') {
+                        chatUnreadIndicator.classList.add('active');
+                    } else if (tab === 'users' && currentTab !== 'users') {
+                        usersUnreadIndicator.classList.add('active');
+                    }
+                }
+
+                // Simulate new messages and user status changes
+                setInterval(() => {
+                    // 15% chance of new message when not on chat tab
+                    if (Math.random() < 0.15 && currentTab !== 'chat') {
+                        showUnreadIndicator('chat');
+                    }
+
+                    // 10% chance of user status change when not on users tab
+                    if (Math.random() < 0.1 && currentTab !== 'users') {
+                        showUnreadIndicator('users');
+                    }
+                }, 15000); // Check every 15 seconds
+
+                // Update current tab reference
+                window.updateCurrentTab = function(tab) {
+                    currentTab = tab;
+
+                    // Clear the unread indicator for the active tab
+                    if (tab === 'chat') {
+                        chatUnreadIndicator.classList.remove('active');
+                    } else if (tab === 'users') {
+                        usersUnreadIndicator.classList.remove('active');
+                    }
+                };
+            }
+
             // Function to switch between chat tabs with simple animations
             function switchChatTab(tabName) {
                 // Get elements
@@ -425,6 +468,11 @@ def GlobalChat(is_open=False):
                 // Prevent rapid tab switching by checking if animation is in progress
                 if (document.querySelector('.tab-switching-in-progress')) {
                     return;
+                }
+
+                // Update current tab for unread indicators
+                if (window.updateCurrentTab) {
+                    window.updateCurrentTab(tabName);
                 }
 
                 // Mark that tab switching is in progress
@@ -552,7 +600,7 @@ def GlobalChat(is_open=False):
             // Function to initialize status tooltips
             function initializeStatusTooltips() {
                 // Get all status indicators
-                const statusIndicators = document.querySelectorAll('.status-indicator, .avatar-status');
+                const statusIndicators = document.querySelectorAll('.status-indicator');
 
                 // Add mouseover event to show tooltip with status information
                 statusIndicators.forEach(indicator => {
@@ -608,7 +656,7 @@ def GlobalChat(is_open=False):
                 if (indicator) {
                     // Clear any existing classes or styles
                     indicator.className = 'chat-sending-indicator htmx-request';
-                    indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                    indicator.innerHTML = '<span class="chat-sending-text"><span style="display:inline-block;vertical-align:middle;">Sending...</span></span>';
                     indicator.style.display = 'flex';
                     indicator.style.opacity = '1';
                 }
@@ -688,7 +736,7 @@ def GlobalChat(is_open=False):
                             if (shouldShowSuccess) {
                                 // Show a brief success message with animation
                                 indicator.className = 'chat-sending-indicator visible';
-                                indicator.innerHTML = '<span class="chat-sending-text success">Sent</span>';
+                                indicator.innerHTML = '<span class="chat-sending-text success"><span style="display:inline-block;vertical-align:middle;">Sent</span></span>';
 
                                 // Add a subtle animation
                                 indicator.style.transform = 'translateY(-0.5rem)';
@@ -699,7 +747,7 @@ def GlobalChat(is_open=False):
                                     indicator.style.transform = 'translateY(-1rem)';
                                     setTimeout(() => {
                                         indicator.style.display = 'none';
-                                        indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                                        indicator.innerHTML = '<span class="chat-sending-text"><span style="display:inline-block;vertical-align:middle;">Sending...</span></span>';
                                     }, 300);
                                 }, 1500);
                             } else {
@@ -708,7 +756,7 @@ def GlobalChat(is_open=False):
                                 indicator.style.transform = 'translateY(-1rem)';
                                 setTimeout(() => {
                                     indicator.style.display = 'none';
-                                    indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                                    indicator.innerHTML = '<span class="chat-sending-text"><span style="display:inline-block;vertical-align:middle;">Sending...</span></span>';
                                 }, 300);
                             }
                         }
@@ -754,7 +802,7 @@ def GlobalChat(is_open=False):
                     // Update the sending indicator to show error
                     if (indicator) {
                         indicator.className = 'chat-sending-indicator visible';
-                        indicator.innerHTML = '<span class="chat-sending-text error">Failed</span>';
+                        indicator.innerHTML = '<span class="chat-sending-text error"><span style="display:inline-block;vertical-align:middle;">Failed</span></span>';
                         indicator.style.transform = 'translateY(-0.5rem)';
 
                         // Hide the error message after 3 seconds with a smooth fade
@@ -763,7 +811,7 @@ def GlobalChat(is_open=False):
                             indicator.style.transform = 'translateY(-1rem)';
                             setTimeout(() => {
                                 indicator.style.display = 'none';
-                                indicator.innerHTML = '<span class="chat-sending-text">Sending...</span>';
+                                indicator.innerHTML = '<span class="chat-sending-text"><span style="display:inline-block;vertical-align:middle;">Sending...</span></span>';
                             }, 300);
                         }, 3000);
                     }
@@ -792,6 +840,37 @@ def GlobalChat(is_open=False):
                 });
             }
 
+            // Simulate typing indicator
+            function simulateTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                const typingText = document.querySelector('.typing-indicator-text');
+                const users = ['Alex', 'Jamie', 'Morgan', 'Taylor', 'Jordan'];
+
+                // Show typing indicator randomly
+                setInterval(() => {
+                    // 20% chance to show typing indicator if not already active
+                    if (Math.random() < 0.2 && !typingIndicator.classList.contains('active')) {
+                        // Select random user
+                        const user = users[Math.floor(Math.random() * users.length)];
+                        typingText.textContent = `${user} is typing...`;
+
+                        // Show indicator
+                        typingIndicator.classList.add('active');
+
+                        // Scroll to bottom if user is near bottom already
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 100) {
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        // Hide after random time (2-5 seconds)
+                        setTimeout(() => {
+                            typingIndicator.classList.remove('active');
+                        }, 2000 + Math.random() * 3000);
+                    }
+                }, 10000); // Check every 10 seconds
+            }
+
             // Initialize chat input functionality when the DOM is loaded
             document.addEventListener('DOMContentLoaded', function() {
                 const chatInput = document.getElementById('chat-message-input');
@@ -799,6 +878,12 @@ def GlobalChat(is_open=False):
                 const chatMessages = document.getElementById('chat-messages');
                 const chatContent = document.getElementById('chat-content');
                 const usersContent = document.getElementById('users-content');
+
+                // Initialize typing indicator simulation
+                simulateTypingIndicator();
+
+                // Initialize unread indicators
+                handleUnreadIndicators();
 
                 // Ensure initial tab state is correct
                 if (chatContent) {
@@ -868,6 +953,21 @@ def GlobalChat(is_open=False):
                     # Messages container with scrolling
                     Div(
                         *message_elements,
+                        # Add typing indicator
+                        Div(
+                            Div(
+                                Span("Someone is typing", cls="typing-indicator-text"),
+                                Div(
+                                    Div(cls="typing-indicator-dot"),
+                                    Div(cls="typing-indicator-dot"),
+                                    Div(cls="typing-indicator-dot"),
+                                    cls="typing-indicator-dots"
+                                ),
+                                cls="typing-indicator-content"
+                            ),
+                            cls="typing-indicator",
+                            id="typing-indicator"
+                        ),
                         id="chat-messages",
                         cls="chat-messages"
                     ),
@@ -895,7 +995,10 @@ def GlobalChat(is_open=False):
                             id="chat-form"
                         ),
                         Div(
-                            Span("Sending message...", cls="chat-sending-text"),
+                            Span(
+                                Span("Sending message...", style="display:inline-block;vertical-align:middle;"),
+                                cls="chat-sending-text"
+                            ),
                             cls="chat-sending-indicator",
                             id="chat-sending-indicator"
                         ),
@@ -1142,19 +1245,17 @@ def get_toggle_js():
                 // Create a new message element
                 const messageTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const messageHTML = `
-                    <div class="flex gap-3">
-                        <div class="flex-shrink-0">
-                            <div class="relative">
-                                <img src="/img/code-avatar.svg?height=32&width=32" alt="DeadDev_42" class="w-8 h-8 rounded-full bg-[#252525]">
-                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#1a1a1a]"></div>
-                            </div>
+                    <div class="chat-message current-user" id="message-new">
+                        <div class="message-avatar-container">
+                            <img src="/img/code-avatar.svg" alt="DeadDev_42's avatar" class="message-avatar">
                         </div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-medium text-sm text-white">DeadDev_42</span>
-                                <span class="text-xs text-gray-500">${messageTime}</span>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">DeadDev_42</span>
+                                <span class="user-status-text online">online</span>
+                                <span class="message-time">${messageTime}</span>
                             </div>
-                            <p class="text-sm text-gray-300 mt-1">${messageText}</p>
+                            <p class="message-text">${messageText}</p>
                         </div>
                     </div>
                 `;
@@ -1162,7 +1263,9 @@ def get_toggle_js():
                 // Add message to chat
                 const messageDiv = document.createElement('div');
                 messageDiv.innerHTML = messageHTML;
-                chatMessages.appendChild(messageDiv);
+                // Extract the actual message element from the wrapper
+                const messageElement = messageDiv.firstElementChild;
+                chatMessages.appendChild(messageElement);
 
                 // Clear input and scroll to bottom
                 chatMessageInput.value = '';
@@ -1498,7 +1601,7 @@ def DashboardLayout(username, state, content):
             ),
             cls="user-menu-container"
         ),
-        GlobalChat(is_open=True),
+        GlobalChat(),
         cls="header-right"
     )
 
@@ -1558,18 +1661,18 @@ async def chat_send_message(request):
     return Div(
         Div(
             Img(src="\img\code-avatar.svg", alt=f"{username}'s avatar", cls="message-avatar"),
-            Div(cls="avatar-status online"),
             cls="message-avatar-container"
         ),
         Div(
             Div(
                 Span(username, cls="message-sender"),
+                Span("online", cls="user-status-text online"),
                 Span(timestamp, cls="message-time"),
                 cls="message-header"
             ),
             P(message_text, cls="message-text"),
             cls="message-content"
         ),
-        cls="chat-message",
+        cls="chat-message current-user",
         id=f"message-new-{int(datetime.now().timestamp())}"
     )
