@@ -24,8 +24,7 @@
 .chat-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 1);
-  backdrop-filter: blur(0px);
+  background-color: rgba(0, 0, 0, 0.3); /* Light semi-transparent background without blur */
   z-index: 30;
   transition: var(--chat-transition);
 }
@@ -33,6 +32,7 @@
 .chat-overlay.hidden {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
 }
 
 /* Sidebar */
