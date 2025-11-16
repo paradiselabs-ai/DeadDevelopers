@@ -20,35 +20,48 @@ import time
 
 # Import Django models and functionality
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.db import connection
+from auth_bridge import AuthBridge
+
 User = get_user_model()
+
+# Check database migrations on startup
+def check_migrations():
+    """Verify that all database migrations have been applied"""
+    try:
+        connection.ensure_connection()
+        # This will raise an exception if migrations are not up to date
+        call_command('migrate', '--check', verbosity=0)
+        print("✓ Database migrations are up to date")
+    except Exception as e:
+        print(f"⚠️  Database migrations need to run: {e}")
+        print("Run: python manage.py migrate")
+        sys.exit(1)
+
+# Only check migrations in production or when explicitly enabled
+if not os.getenv('SKIP_MIGRATION_CHECK'):
+    check_migrations()
 
 # Status code 303 is a redirect that can change POST to GET
 login_redir = RedirectResponse('/login', status_code=303)
 
 def auth_before(req, sess):
-    """Beforeware to handle authentication"""
-    # Set auth in request scope from session
-    auth = req.scope['auth'] = sess.get('auth', None)
+    """Beforeware to handle authentication with AuthBridge synchronization"""
+    # Synchronize FastHTML and Django sessions
+    AuthBridge.sync_sessions(req, sess)
     
-    # If auth is present in session, ensure user data is also available
-    if auth:
-        # Ensure user data is in session
-        if 'user' not in sess:
-            try:
-                # Try to get user from Django
-                user = User.objects.get(username=auth)
-                sess['user'] = {
-                    'name': user.get_display_name(),
-                    'email': user.email,
-                    'ai_percentage': user.ai_percentage
-                }
-            except User.DoesNotExist:
-                # If user doesn't exist, clear auth
-                del sess['auth']
-                return login_redir
+    # Get current user from unified auth system
+    user = AuthBridge.get_current_user(req, sess)
+    
+    # Set auth in request scope
+    req.scope['auth'] = sess.get('auth', None)
+    
+    # If user is authenticated, allow access
+    if user:
         return None
     
-    # No auth in session, redirect to login
+    # No auth, redirect to login
     return login_redir
 
 # Initialize FastHTML app with WebSocket support
