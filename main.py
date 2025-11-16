@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from app import app, rt
+from utils.feed_helpers import generate_live_updates, generate_live_feed, create_scrolling_feed
 
 # Import routes
 from routes.auth import *
@@ -146,80 +147,7 @@ def get(session):
                         Div(
                             H3("// LIVE UPDATES", cls="feed-title"),
                             Div(
-                                Ul(
-                                    Li(
-                                        Span("@sarah", cls="username"),
-                                        " completed the daily challenge using AI pair programming",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@maya", cls="username"),
-                                        " deployed a new feature in 0.3s with AI assistance",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@chris", cls="username"),
-                                        " optimized database queries using AI suggestions",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@taylor", cls="username"),
-                                        " created a responsive layout with AI pair programming",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@jordan", cls="username"),
-                                        " automated testing with AI-generated test cases",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@quinn", cls="username"),
-                                        " improved API documentation using AI",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@riley", cls="username"),
-                                        " fixed 3 bugs with AI code analysis",
-                                        cls="update-item"
-                                    ),
-                                    # Duplicate items for smooth scrolling
-                                    Li(
-                                        Span("@sarah", cls="username"),
-                                        " completed the daily challenge using AI pair programming",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@maya", cls="username"),
-                                        " deployed a new feature in 0.3s with AI assistance",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@chris", cls="username"),
-                                        " optimized database queries using AI suggestions",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@taylor", cls="username"),
-                                        " created a responsive layout with AI pair programming",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@jordan", cls="username"),
-                                        " automated testing with AI-generated test cases",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@quinn", cls="username"),
-                                        " improved API documentation using AI",
-                                        cls="update-item"
-                                    ),
-                                    Li(
-                                        Span("@riley", cls="username"),
-                                        " fixed 3 bugs with AI code analysis",
-                                        cls="update-item"
-                                    ),
-                                    cls="updates-list"
-                                ),
+                                create_scrolling_feed(generate_live_updates(), "updates-list"),
                                 cls="feed-scroll"
                             ),
                             cls="feed-column"
@@ -230,100 +158,7 @@ def get(session):
                             Div(
                                 H3("// LIVE FEED", cls="feed-title"),
                                 Div(
-                                    Ul(
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " AI Code Challenge Week starts Monday! Get ready to compete! 🏆",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@sophia", cls="username"),
-                                            " published: 'Building Scalable Systems with AI'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@marcus", cls="username"),
-                                            " posted: 'From Junior to Senior with AI in 6 Months'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@elena", cls="username"),
-                                            " wrote: 'The Ultimate Guide to AI Prompt Engineering'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " New AI Pairing Features Released! 🚀",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@kai", cls="username"),
-                                            " published: 'AI-First Architecture Patterns That Scale'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@zara", cls="username"),
-                                            " shared: 'My Journey to 90% AI Development'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " Community Milestone - 10k Members! 🎉",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@lucas", cls="username"),
-                                            " wrote: 'Revolutionizing Code Reviews with AI'",
-                                            cls="feed-item"
-                                        ),
-                                        # Duplicate items for smooth scrolling
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " AI Code Challenge Week starts Monday! Get ready to compete! 🏆",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@sophia", cls="username"),
-                                            " published: 'Building Scalable Systems with AI'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@marcus", cls="username"),
-                                            " posted: 'From Junior to Senior with AI in 6 Months'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@elena", cls="username"),
-                                            " wrote: 'The Ultimate Guide to AI Prompt Engineering'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " New AI Pairing Features Released! 🚀",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@kai", cls="username"),
-                                            " published: 'AI-First Architecture Patterns That Scale'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("@zara", cls="username"),
-                                            " shared: 'My Journey to 90% AI Development'",
-                                            cls="feed-item"
-                                        ),
-                                        Li(
-                                            Span("📢 ANNOUNCEMENT", cls="announcement"),
-                                            " Community Milestone - 10k Members! 🎉",
-                                            cls="feed-item announcement-item"
-                                        ),
-                                        Li(
-                                            Span("@lucas", cls="username"),
-                                            " wrote: 'Revolutionizing Code Reviews with AI'",
-                                            cls="feed-item"
-                                        ),
-                                        cls="feed-list"
-                                    ),
+                                    create_scrolling_feed(generate_live_feed(), "feed-list"),
                                     cls="feed-scroll"
                                 ),
                                 cls="feed-content"
