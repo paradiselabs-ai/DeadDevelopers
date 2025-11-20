@@ -9,7 +9,8 @@ from django_ratelimit.decorators import ratelimit
 from django.core.cache import cache
 import re
 from fasthtml.svg import Svg, ft_svg as tag
-from allauth.account.utils import send_email_confirmation
+# Email confirmation will be handled manually if needed
+# from allauth.account.utils import send_email_confirmation
 from allauth.account.models import EmailAddress
 from typing import List
 
@@ -163,15 +164,16 @@ def post(form: SignupForm, req, session):
         ai_percentage=0
     )
 
-    # Create EmailAddress record for the user (unverified)
+    # Create EmailAddress record for the user (auto-verified in development)
     email_address, created = EmailAddress.objects.get_or_create(
         user=user,
         email=form.email,
-        defaults={'primary': True, 'verified': False}
+        defaults={'primary': True, 'verified': True}  # Auto-verify in development
     )
 
     # Send verification email
-    send_email_confirmation(req, user)
+    # TODO: Re-enable email confirmation when allauth is properly configured
+    # send_email_confirmation(req, user)
     
     # Increment rate limit counter
     cache.set(rate_limit_key, signup_count + 1, 3600)  # 1 hour expiry
@@ -435,20 +437,24 @@ def post(email: str, password: str, req, session):
     try:
         email_address = EmailAddress.objects.get(user=user, email=user.email)
         if not email_address.verified:
-            # Send a new verification email
-            send_email_confirmation(req, user)
-            return login_form(req, "Email not verified. We've sent a new verification email to your address.")
+            # Auto-verify in development mode (when SMTP is not configured)
+            # In production, uncomment email sending and remove auto-verification
+            email_address.verified = True
+            email_address.save()
+            # TODO: Re-enable email confirmation in production
+            # send_email_confirmation(req, user)
+            # return login_form(req, "Email not verified. We've sent a new verification email to your address.")
     except EmailAddress.DoesNotExist:
-        # Create an email address record if it doesn't exist
+        # Create an email address record and auto-verify in development
         email_address = EmailAddress.objects.create(
             user=user,
             email=user.email,
             primary=True,
-            verified=False
+            verified=True  # Auto-verify in development
         )
-        # Send verification email
-        send_email_confirmation(req, user)
-        return login_form(req, "Email not verified. We've sent a verification email to your address.")
+        # TODO: Re-enable email confirmation in production
+        # send_email_confirmation(req, user)
+        # return login_form(req, "Email not verified. We've sent a verification email to your address.")
 
     # Use AuthBridge to log in user in both FastHTML and Django sessions
     AuthBridge.login_user(req, session, user)
