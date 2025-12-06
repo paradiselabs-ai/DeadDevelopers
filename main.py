@@ -12,6 +12,7 @@ from routes.blog import *
 from routes.about import *
 from routes.header import SiteHeader
 from routes.email_confirmation import *
+from routes.profile import *
 
 # Landing page route
 @rt('/')

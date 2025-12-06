@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     
     # Third party apps
+    'rest_framework',  # REST API framework
     'channels',  # WebSocket support
     'allauth',
     'allauth.account',
@@ -147,8 +148,20 @@ STATICFILES_DIRS = [
 ]
 
 # Media files
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Use Google Cloud Storage in production, local storage in development
+if os.getenv('GCS_BUCKET_NAME') and (os.getenv('GCS_CREDENTIALS_PATH') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS')):
+    # Production: Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'django_config.storage.MediaStorage'
+    GS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME')
+    GS_PROJECT_ID = os.getenv('GCS_PROJECT_ID')
+    GS_CREDENTIALS = os.getenv('GCS_CREDENTIALS_PATH') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    GS_DEFAULT_ACL = 'publicRead'
+    GS_FILE_OVERWRITE = False
+    MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+else:
+    # Development: Local file storage
+    MEDIA_URL = 'media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

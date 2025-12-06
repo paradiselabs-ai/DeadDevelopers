@@ -9,6 +9,9 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('accounts/', include('allauth.urls')),  # Django-allauth URLs
     
+    # API endpoints
+    path('api/profiles/', include('api.profiles.urls')),
+    
     # Redirect paths used in tests but handled by FastHTML
     path('', RedirectView.as_view(url='/'), name='home'),
     path('dashboard/', RedirectView.as_view(url='/dashboard'), name='dashboard'),

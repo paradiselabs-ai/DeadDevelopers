@@ -1,0 +1,6 @@
+<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+  <rect width="150" height="150" fill="#1a1a1a"/>
+  <circle cx="75" cy="60" r="30" fill="#00ff66"/>
+  <path d="M 40 120 Q 75 100 110 120" stroke="#00ff66" stroke-width="8" fill="none"/>
+  <text x="75" y="145" font-family="monospace" font-size="12" fill="#00ff66" text-anchor="middle">DEAD DEV</text>
+</svg>

@@ -70,6 +70,43 @@ class User(AbstractUser):
     challenge_count = models.IntegerField(default=0)
     completed_projects = models.IntegerField(default=0)
     
+    # Portfolio & Profile Fields (Phase 1)
+    portfolio_content = models.TextField(
+        _('portfolio content'),
+        blank=True,
+        help_text=_('Markdown content for the user portfolio')
+    )
+    tagline = models.CharField(
+        _('tagline'),
+        max_length=200,
+        blank=True,
+        help_text=_('Short tagline or headline for profile')
+    )
+    location = models.CharField(
+        _('location'),
+        max_length=100,
+        blank=True
+    )
+    linkedin_username = models.CharField(
+        _('LinkedIn username'),
+        max_length=50,
+        blank=True
+    )
+    portfolio_url = models.URLField(
+        _('external portfolio URL'),
+        max_length=200,
+        blank=True
+    )
+    is_public = models.BooleanField(
+        _('public profile'),
+        default=True,
+        help_text=_('Whether the profile is visible to other users')
+    )
+    show_email = models.BooleanField(
+        _('show email on profile'),
+        default=False
+    )
+    
     # Set the custom manager
     objects = UserManager()
     
@@ -88,3 +125,13 @@ class User(AbstractUser):
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name}"
         return self.username
+    
+    def get_absolute_url(self):
+        """Return the URL to the user's profile page."""
+        return f"/profile/{self.username}"
+    
+    def get_avatar_url(self):
+        """Return the avatar URL or a default placeholder."""
+        if self.avatar:
+            return self.avatar.url
+        return "/static/images/default-avatar.svg"

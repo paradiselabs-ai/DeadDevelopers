@@ -74,7 +74,7 @@ app, rt = fast_app(
     static_path=Path('static'),  # Set static files directory
     before=Beforeware(
         auth_before,
-        skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about', r'/accounts/confirm-email.*']
+        skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about', r'/accounts/confirm-email.*', r'/profile/.*']
     ),
     hdrs=(
         # Add timestamp query parameter to bust cache
