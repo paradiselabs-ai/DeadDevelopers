@@ -489,6 +489,12 @@ def get(username: str, session, req):
                     Div(
                         H2("Personal Information"),
                         Div(
+                            Label("Avatar", _for="avatar"),
+                            Input(type="file", name="avatar", id="avatar", accept="image/*"),
+                            P("Upload a profile picture (max 5MB, JPG/PNG/GIF/WEBP)", cls="help-text"),
+                            cls="form-group"
+                        ),
+                        Div(
                             Label("First Name", _for="first_name"),
                             Input(type="text", name="first_name", id="first_name", 
                                   value=current_user.first_name or ""),
@@ -629,6 +635,7 @@ def get(username: str, session, req):
                     
                     method="post",
                     action=f"/profile/{username}/edit",
+                    enctype="multipart/form-data",
                     cls="edit-profile-form"
                 ),
                 
@@ -655,6 +662,31 @@ async def post(username: str, session, req):
     
     # Get form data
     form_data = await req.form()
+    
+    # Handle avatar upload
+    avatar_file = form_data.get('avatar')
+    if avatar_file and hasattr(avatar_file, 'filename') and avatar_file.filename:
+        # Validate file type
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+        import os
+        file_ext = os.path.splitext(avatar_file.filename)[1].lower()
+        
+        if file_ext in allowed_extensions:
+            # Validate file size (max 5MB)
+            avatar_content = await avatar_file.read()
+            if len(avatar_content) <= 5 * 1024 * 1024:  # 5MB
+                # Save the file
+                from django.core.files.uploadedfile import SimpleUploadedFile
+                uploaded_file = SimpleUploadedFile(
+                    name=f"{username}_avatar{file_ext}",
+                    content=avatar_content,
+                    content_type=avatar_file.content_type
+                )
+                current_user.avatar = uploaded_file
+            else:
+                session['flash_error'] = "Avatar file is too large (max 5MB)"
+        else:
+            session['flash_error'] = "Invalid file type. Please upload JPG, PNG, GIF, or WEBP"
     
     # Update user fields
     current_user.first_name = form_data.get('first_name', '')

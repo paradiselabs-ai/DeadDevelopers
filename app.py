@@ -64,6 +64,9 @@ def auth_before(req, sess):
     # No auth, redirect to login
     return login_redir
 
+# Import Django API for mounting
+from api_mount import django_app
+
 # Initialize FastHTML app with WebSocket support
 app, rt = fast_app(
     exts='ws',  # Enable WebSocket support
@@ -74,7 +77,7 @@ app, rt = fast_app(
     static_path=Path('static'),  # Set static files directory
     before=Beforeware(
         auth_before,
-        skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about', r'/accounts/confirm-email.*', r'/profile/.*']
+        skip=[r'/favicon\.ico', r'/static/.*', r'.*\.css', r'.*\.js', r'.*\.png', '/login', '/signup', '/', '/features', '/community', '/blog', '/about', r'/accounts/confirm-email.*', r'/profile/[^/]+$']
     ),
     hdrs=(
         # Add timestamp query parameter to bust cache
@@ -92,3 +95,13 @@ app, rt = fast_app(
 
 # Set up toast notifications
 setup_toasts(app)
+
+# Mount Django API for /api/* and /admin/* routes
+# Note: Django handles the full routing, so we mount at root and let Django's URL conf handle /api/ and /admin/
+from starlette.routing import Mount
+from starlette.middleware.wsgi import WSGIMiddleware
+
+# Add Django as a sub-application that handles its own routes
+# We need to insert these routes before the catch-all FastHTML routes
+app.routes.insert(0, Mount('/api', app=django_app))
+app.routes.insert(0, Mount('/admin', app=django_app))
