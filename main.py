@@ -251,4 +251,4 @@ def get(session):
     )
 
 # Run the server
-serve()
+serve(reload=False)
