@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from app import app, rt, User
+from auth_bridge import AuthBridge
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.text import slugify
@@ -17,17 +18,17 @@ def chat_header():
         cls="chat-header terminal-header"
     )
 
-def chat_room_card(room):
+def chat_room_card(room, user):
     """Card component for a chat room"""
     # Get online users count
     online_count = UserPresence.objects.filter(room=room, is_online=True).count()
-    
+
     # Get unread messages count for current user
     unread_count = ChatNotification.objects.filter(
         room=room,
-        user=get_current_user(),
+        user=user,
         is_read=False
-    ).count()
+    ).count() if user else 0
     
     # Format room type badge
     room_type_badge = ""
@@ -65,7 +66,7 @@ def chat_room_card(room):
         hx_target="#chat-container"
     )
 
-def chat_sidebar(active_room=None):
+def chat_sidebar(active_room=None, user=None):
     """Sidebar component for chat navigation"""
     # Get global chat room
     try:
@@ -79,17 +80,16 @@ def chat_sidebar(active_room=None):
             type='global',
             is_active=True
         )
-    
+
     # Get public chat rooms
     public_rooms = ChatRoom.objects.filter(type='public', is_active=True)[:5]
-    
+
     # Get private chat rooms for the current user
-    user = get_current_user()
     private_rooms = ChatRoom.objects.filter(
         type='private',
         is_active=True,
         participants=user
-    )[:5]
+    )[:5] if user else []
     
     # Create room list items
     room_items = []
@@ -610,12 +610,12 @@ def chat_websocket_script(room):
     """)
 
 @rt('/chat')
-def get(req):
+def get(req, session):
     """Chat home page"""
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    user = AuthBridge.get_current_user(req, session)
+    if not user:
         return RedirectResponse('/login?next=/chat', status_code=303)
-    
+
     # Get global chat room
     try:
         global_room = ChatRoom.objects.get(type='global')
@@ -628,30 +628,30 @@ def get(req):
             type='global',
             is_active=True
         )
-    
+
     # Get public chat rooms
     public_rooms = ChatRoom.objects.filter(type='public', is_active=True)
-    
+
     # Get private chat rooms for the current user
     private_rooms = ChatRoom.objects.filter(
         type='private',
         is_active=True,
-        participants=req.user
+        participants=user
     )
-    
+
     # Create room cards
     room_cards = []
-    
+
     # Add global room card
-    room_cards.append(chat_room_card(global_room))
-    
+    room_cards.append(chat_room_card(global_room, user))
+
     # Add public room cards
     for room in public_rooms:
-        room_cards.append(chat_room_card(room))
-    
+        room_cards.append(chat_room_card(room, user))
+
     # Add private room cards
     for room in private_rooms:
-        room_cards.append(chat_room_card(room))
+        room_cards.append(chat_room_card(room, user))
     
     # Create chat home component
     chat_home = Div(
@@ -682,49 +682,49 @@ def get(req):
     )
 
 @rt('/chat/{room_slug}')
-def get(req, room_slug):
+def get(req, session, room_slug):
     """Chat room page"""
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    user = AuthBridge.get_current_user(req, session)
+    if not user:
         return RedirectResponse(f'/login?next=/chat/{room_slug}', status_code=303)
-    
+
     # Get the chat room
     try:
         room = ChatRoom.objects.get(slug=room_slug, is_active=True)
     except ChatRoom.DoesNotExist:
         return RedirectResponse('/chat', status_code=303)
-    
+
     # Check if user has access to this room
-    if not room.can_user_access(req.user):
+    if not room.can_user_access(user):
         return RedirectResponse('/chat', status_code=303)
-    
+
     # For private rooms, ensure both users are participants
     if room.is_private:
-        room.add_participant(req.user)
-    
+        room.add_participant(user)
+
     # Update or create user presence
     presence, created = UserPresence.objects.get_or_create(
-        user=req.user,
+        user=user,
         room=room,
         defaults={"is_online": True}
     )
-    
+
     if not created:
         presence.update_presence(is_online=True)
-    
+
     # Mark notifications as read
     ChatNotification.objects.filter(
-        user=req.user,
+        user=user,
         room=room,
         is_read=False
     ).update(is_read=True)
-    
+
     # Create chat room page
     chat_room_page = Div(
         Link(rel="stylesheet", href="/static/css/chat.css"),
         Link(rel="stylesheet", href="/static/css/prism.css"),
         Div(
-            chat_sidebar(active_room=room),
+            chat_sidebar(active_room=room, user=user),
             Div(
                 chat_room_component(room),
                 cls="chat-content"
@@ -742,10 +742,10 @@ def get(req, room_slug):
     )
 
 @rt('/chat/create')
-def get(req):
+def get(req, session):
     """Create chat room page"""
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    user = AuthBridge.get_current_user(req, session)
+    if not user:
         return RedirectResponse('/login?next=/chat/create', status_code=303)
     
     # Create form
@@ -816,25 +816,25 @@ def get(req):
     )
 
 @rt('/chat/create')
-def post(req, name: str, description: str = "", topics: str = ""):
+def post(req, session, name: str, description: str = "", topics: str = ""):
     """Handle chat room creation"""
-    # Check if user is authenticated
-    if not req.user.is_authenticated:
+    user = AuthBridge.get_current_user(req, session)
+    if not user:
         return RedirectResponse('/login?next=/chat/create', status_code=303)
-    
+
     # Validate input
     if not name:
         # Return form with error
-        return get(req)
-    
+        return get(req, session)
+
     # Generate slug from name
     slug = slugify(name)
-    
+
     # Check if slug already exists
     if ChatRoom.objects.filter(slug=slug).exists():
         # Append timestamp to make slug unique
         slug = f"{slug}-{int(timezone.now().timestamp())}"
-    
+
     # Create the room
     room = ChatRoom.objects.create(
         name=name,
@@ -844,12 +844,12 @@ def post(req, name: str, description: str = "", topics: str = ""):
         topics=topics,
         is_active=True
     )
-    
+
     # Add creator as moderator
-    room.moderators.add(req.user)
-    
+    room.moderators.add(user)
+
     # Add success message
-    add_toast(req.session, f"Chat room '{name}' created successfully!", "success")
-    
+    add_toast(session, f"Chat room '{name}' created successfully!", "success")
+
     # Redirect to the new room
     return RedirectResponse(f'/chat/{room.slug}', status_code=303)

@@ -24,7 +24,8 @@ django-ratelimit>=4.1.0  # Rate limiting for endpoints
 
 # API
 djangorestframework>=3.14.0  # REST API framework
-markdown>=3.5.0  # For DRF browsable API
+markdown>=3.5.0  # For DRF browsable API and user portfolio content
+bleach>=6.1.0  # XSS sanitizer for user-rendered markdown
 
 # Cloud Storage
 django-storages[google]>=1.14.0  # Google Cloud Storage backend

@@ -5,7 +5,11 @@ from auth_bridge import AuthBridge, csrf_input
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django_ratelimit.decorators import ratelimit
+# Rate limiting uses django.core.cache directly rather than the
+# django-ratelimit @ratelimit decorator, because @ratelimit expects a
+# Django HttpRequest object and FastHTML/@rt routes hand us a Starlette
+# request — the decorator chain doesn't compose cleanly. Manual cache
+# checks keep the per-route logic explicit and FastHTML-compatible.
 from django.core.cache import cache
 import re
 from fasthtml.svg import Svg, ft_svg as tag

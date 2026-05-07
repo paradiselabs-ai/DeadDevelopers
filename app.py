@@ -96,12 +96,15 @@ app, rt = fast_app(
 # Set up toast notifications
 setup_toasts(app)
 
-# Mount Django API for /api/* and /admin/* routes
-# Note: Django handles the full routing, so we mount at root and let Django's URL conf handle /api/ and /admin/
-from starlette.routing import Mount
-from starlette.middleware.wsgi import WSGIMiddleware
+# ASGI dispatcher: /api/* and /admin/* go to Django with the full path
+# preserved so django_config/urls.py and Django's URL reversing both work.
+# (Starlette's Mount strips its prefix, which breaks the urlconf.)
+_fastapp = app
 
-# Add Django as a sub-application that handles its own routes
-# We need to insert these routes before the catch-all FastHTML routes
-app.routes.insert(0, Mount('/api', app=django_app))
-app.routes.insert(0, Mount('/admin', app=django_app))
+async def app(scope, receive, send):
+    if scope['type'] in ('http', 'websocket'):
+        path = scope.get('path', '')
+        if path.startswith('/api/') or path.startswith('/admin/'):
+            await django_app(scope, receive, send)
+            return
+    await _fastapp(scope, receive, send)

@@ -4,6 +4,23 @@ from routes.header import SiteHeader
 from django.shortcuts import get_object_or_404
 from users.models import User
 import markdown
+import bleach
+
+# Tags + attrs allowed in user-rendered portfolio markdown.
+# Anything else (script, iframe, on* handlers, etc.) is stripped.
+PORTFOLIO_ALLOWED_TAGS = [
+    "p", "br", "strong", "em", "code", "pre", "blockquote",
+    "ul", "ol", "li", "a", "h1", "h2", "h3", "h4", "h5", "h6",
+    "img", "hr", "table", "thead", "tbody", "tr", "th", "td",
+    "div", "span",
+]
+PORTFOLIO_ALLOWED_ATTRS = {
+    "*": ["class"],
+    "a": ["href", "title", "rel"],
+    "img": ["src", "alt", "title"],
+    "code": ["class"],
+}
+PORTFOLIO_ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 
 
 @rt('/profile/{username}')
@@ -48,12 +65,21 @@ def get(username: str, session, req):
             )
         )
     
-    # Convert portfolio markdown to HTML
+    # Convert portfolio markdown to HTML, then sanitize against XSS.
+    # markdown.markdown() does NOT strip raw HTML tags, so untrusted user
+    # content could inject <script> or event handlers without bleach.
     portfolio_html = ""
     if profile_user.portfolio_content:
-        portfolio_html = markdown.markdown(
+        rendered = markdown.markdown(
             profile_user.portfolio_content,
             extensions=['extra', 'codehilite']
+        )
+        portfolio_html = bleach.clean(
+            rendered,
+            tags=PORTFOLIO_ALLOWED_TAGS,
+            attributes=PORTFOLIO_ALLOWED_ATTRS,
+            protocols=PORTFOLIO_ALLOWED_PROTOCOLS,
+            strip=True,
         )
     
     return Titled(
@@ -334,9 +360,9 @@ def get(username: str, session, req):
     """Display the profile edit form"""
     # Store current path in session
     session['path'] = f'/profile/{username}/edit'
-    
+
     # Get the current user
-    from auth_bridge import AuthBridge
+    from auth_bridge import AuthBridge, csrf_input
     current_user = AuthBridge.get_current_user(req, session)
     
     # Check authentication
@@ -485,6 +511,7 @@ def get(username: str, session, req):
                 H1("Edit Profile"),
                 
                 Form(
+                    csrf_input(req),  # CSRF protection
                     # Personal Information
                     Div(
                         H2("Personal Information"),
