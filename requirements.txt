@@ -27,6 +27,9 @@ djangorestframework>=3.14.0  # REST API framework
 markdown>=3.5.0  # For DRF browsable API and user portfolio content
 bleach>=6.1.0  # XSS sanitizer for user-rendered markdown
 
+# AI assistant (OpenRouter via OpenAI-compatible API)
+openai>=1.50.0  # AsyncOpenAI client pointed at OpenRouter base_url
+
 # Cloud Storage
 django-storages[google]>=1.14.0  # Google Cloud Storage backend
 google-cloud-storage>=2.10.0  # GCS Python client

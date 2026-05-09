@@ -1,5 +1,7 @@
 from fasthtml.common import *
 from app import app, rt, User
+from auth_bridge import AuthBridge
+from routes.ai import get_ai_response
 from dataclasses import dataclass
 from routes.header import SiteHeader
 
@@ -187,21 +189,14 @@ def post(req, name: str, description: str, session):
     return project_card(Project(name, description, 0, "planned"))
 
 @rt('/dashboard/ask')
-def post(req, query: str, session):
-    # Check if user is authenticated via FastHTML session
-    auth = req.scope.get('auth')
-    if not auth:
+async def post(req, query: str, session):
+    user = AuthBridge.get_current_user(req, session)
+    if not user:
         return RedirectResponse('/login', status_code=303)
-        
-    # TODO: Implement actual AI assistant integration
-    sample_response = """Based on your project structure, I recommend:
-    1. Breaking down the component into smaller, reusable parts
-    2. Adding proper error handling
-    3. Implementing caching for better performance
-    """
-    add_toast(session, "AI assistant has analyzed your query!", "success")
+
+    response = await get_ai_response(query, user.id)
     return Card(
-        H4("AI Assistant Response"),
-        Pre(sample_response),
+        H4("AI Assistant"),
+        Pre(response, cls="ai-response"),
         cls="response-card"
     )
