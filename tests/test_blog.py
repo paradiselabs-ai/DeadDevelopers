@@ -97,10 +97,8 @@ def test_write_post_button_exists():
     # Verify it has an onclick attribute (without checking the specific URL)
     assert 'onclick' in write_post_btn.attrs
 
-@pytest.mark.xfail(reason="Write post page not implemented yet")
-def test_write_post_route():
-    """Test that the write post route exists and requires authentication."""
-    # This test is expected to fail until the write-post route is implemented
-    response = client.get("/write-post", follow_redirects=False)
-    # Should redirect to login without being authenticated
-    assert response.status_code in [302, 303]  # Accept either redirect code
+def test_write_post_route_redirects_unauthenticated():
+    """Anonymous visitors hitting /blog/write are redirected to /login."""
+    response = client.get("/blog/write", follow_redirects=False)
+    assert response.status_code in [302, 303]
+    assert "/login" in response.headers.get("location", "")

@@ -347,10 +347,61 @@ def get(username: str, session, req):
                     ),
                     cls="portfolio-section"
                 ) if portfolio_html or is_own_profile else None,
-                
+
+                # Recent posts by this user
+                _profile_blog_section(profile_user, is_own_profile),
+
                 cls="profile-container"
             )
         )
+    )
+
+
+def _profile_blog_section(profile_user, is_own_profile):
+    """Build the 'Recent posts' section for a profile page.
+
+    Returns None when there are no posts to show and viewer is not the
+    owner (avoid an empty card on guest views).
+    """
+    from users.models import BlogPost
+    qs = BlogPost.objects.filter(author=profile_user)
+    if not is_own_profile:
+        qs = qs.filter(is_published=True)
+    posts = list(qs.order_by('-published_at', '-created_at')[:5])
+
+    if not posts and not is_own_profile:
+        return None
+
+    if not posts:
+        body = P(
+            "No posts yet. ",
+            A("Write your first.", href="/blog/write"),
+            style="color: #888;",
+        )
+    else:
+        body = Ul(
+            *[
+                Li(
+                    A(p.title, href=p.get_absolute_url(), cls="profile-post-title"),
+                    Span(
+                        f"{p.published_at:%b %d, %Y}" if p.published_at else "Draft",
+                        cls="profile-post-date",
+                    ),
+                    cls="profile-post-item",
+                )
+                for p in posts
+            ],
+            cls="profile-post-list",
+        )
+
+    return Div(
+        Div(
+            H2("Recent Posts"),
+            A("All posts →", href=f"/blog?author={profile_user.username}", cls="see-all-link"),
+            cls="section-header",
+        ),
+        body,
+        cls="profile-blog-section",
     )
 
 

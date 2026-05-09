@@ -202,3 +202,87 @@ class Project(models.Model):
 
     def get_absolute_url(self):
         return f"/dashboard/project/{self.slug}"
+
+
+class Tag(models.Model):
+    """A blog post tag. Shared across all users."""
+
+    name = models.CharField(_('name'), max_length=40, unique=True)
+    slug = models.SlugField(_('slug'), max_length=50, unique=True, blank=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)[:50]
+        super().save(*args, **kwargs)
+
+
+class BlogPost(models.Model):
+    """
+    A user-written blog post. Renders to HTML via markdown + bleach
+    sanitization (same pattern as the user portfolio in routes/profile.py).
+
+    Posts are owned by a User. `is_published=False` makes the post a
+    draft visible only to the author. The (author, slug) pair is unique
+    so each user has their own slug namespace.
+    """
+
+    author = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='blog_posts',
+    )
+    title = models.CharField(_('title'), max_length=200)
+    slug = models.SlugField(_('slug'), max_length=220, blank=True)
+    excerpt = models.CharField(
+        _('excerpt'),
+        max_length=400,
+        blank=True,
+        help_text=_('Short summary shown on listing pages'),
+    )
+    content = models.TextField(
+        _('content'),
+        help_text=_('Markdown — rendered through the same XSS sanitizer as portfolios'),
+    )
+    tags = models.ManyToManyField(Tag, related_name='posts', blank=True)
+    is_published = models.BooleanField(_('published'), default=False)
+    published_at = models.DateTimeField(_('published at'), null=True, blank=True)
+    created_at = models.DateTimeField(_('created at'), default=timezone.now)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    view_count = models.PositiveIntegerField(_('view count'), default=0)
+
+    class Meta:
+        verbose_name = _('blog post')
+        verbose_name_plural = _('blog posts')
+        ordering = ['-published_at', '-created_at']
+        unique_together = [('author', 'slug')]
+        indexes = [
+            models.Index(fields=['-published_at']),
+            models.Index(fields=['author', 'is_published']),
+        ]
+
+    def __str__(self):
+        return f"{self.author.username}/{self.title}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)[:220]
+        # Stamp published_at the first time the post flips to published.
+        if self.is_published and self.published_at is None:
+            self.published_at = timezone.now()
+        # Auto-derive excerpt from content if author didn't supply one.
+        if not self.excerpt and self.content:
+            self.excerpt = self.content.strip().split('\n', 1)[0][:400]
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f"/blog/{self.author.username}/{self.slug}"
+
+    def increment_views(self):
+        # Atomic to avoid lost updates under concurrent reads
+        type(self).objects.filter(pk=self.pk).update(view_count=models.F('view_count') + 1)
