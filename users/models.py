@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):
@@ -135,3 +137,68 @@ class User(AbstractUser):
         if self.avatar:
             return self.avatar.url
         return "/static/images/default-avatar.svg"
+
+
+class Project(models.Model):
+    """
+    A project owned by a User. Replaces the SAMPLE_PROJECTS mock data
+    that lived on routes/dashboard.py.
+
+    `ai_percentage` is per-project — it tracks how much of the project's
+    code the user attributes to AI. The site-wide User.ai_percentage is
+    typically derived from the average across active projects, but is
+    kept as a separate authoritative field so users can override.
+    """
+
+    STATUS_CHOICES = [
+        ('planned', 'Planned'),
+        ('in_progress', 'In progress'),
+        ('completed', 'Completed'),
+        ('archived', 'Archived'),
+    ]
+
+    owner = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='projects',
+    )
+    name = models.CharField(_('name'), max_length=120)
+    slug = models.SlugField(_('slug'), max_length=140, blank=True)
+    description = models.TextField(_('description'), blank=True)
+    ai_percentage = models.PositiveSmallIntegerField(
+        _('AI percentage'),
+        default=0,
+        help_text=_('Percentage (0-100) of this project written by AI'),
+    )
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='planned',
+    )
+    repo_url = models.URLField(_('repository URL'), blank=True)
+    live_url = models.URLField(_('live URL'), blank=True)
+    created_at = models.DateTimeField(_('created at'), default=timezone.now)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('project')
+        verbose_name_plural = _('projects')
+        ordering = ['-updated_at']
+        unique_together = [('owner', 'slug')]
+
+    def __str__(self):
+        return f"{self.owner.username}/{self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)[:140]
+        # Clamp ai_percentage to a valid range
+        if self.ai_percentage < 0:
+            self.ai_percentage = 0
+        elif self.ai_percentage > 100:
+            self.ai_percentage = 100
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f"/dashboard/project/{self.slug}"

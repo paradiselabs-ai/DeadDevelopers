@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import User, Project
 
 
 @admin.register(User)
@@ -26,3 +26,13 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'username', 'first_name', 'last_name', 'ai_percentage', 'is_staff')
     search_fields = ('email', 'username', 'first_name', 'last_name')
     ordering = ('email',)
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ('name', 'owner', 'status', 'ai_percentage', 'updated_at')
+    list_filter = ('status',)
+    search_fields = ('name', 'description', 'owner__username', 'owner__email')
+    ordering = ('-updated_at',)
+    raw_id_fields = ('owner',)
+    readonly_fields = ('created_at', 'updated_at', 'slug')
