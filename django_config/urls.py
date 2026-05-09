@@ -17,7 +17,6 @@ urlpatterns = [
     path('dashboard/', RedirectView.as_view(url='/dashboard'), name='dashboard'),
     
     # Add additional app URLs here when created
-    # path('forum/', include('machina.urls')),
 ]
 
 # Serve media files in development

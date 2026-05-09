@@ -37,22 +37,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.gitlab',
-    'widget_tweaks',
-    'haystack',
-    
-    # Machina dependencies
-    'machina',
-    'machina.apps.forum',
-    'machina.apps.forum_conversation',
-    'machina.apps.forum_conversation.forum_attachments',
-    'machina.apps.forum_conversation.forum_polls',
-    'machina.apps.forum_feeds',
-    'machina.apps.forum_moderation',
-    'machina.apps.forum_search',
-    'machina.apps.forum_tracking',
-    'machina.apps.forum_member',
-    'machina.apps.forum_permission',
-    
+
     # Local apps
     'users.apps.UsersConfig',  # Custom user model
     'chat',  # Chat application
@@ -66,7 +51,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'machina.apps.forum_permission.middleware.ForumPermissionMiddleware',
     'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
 ]
 
@@ -83,7 +67,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'machina.core.context_processors.metadata',
             ],
         },
     },
@@ -193,19 +176,6 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@deaddevelopers.com')
 
-# Haystack settings (using Whoosh for development, consider Elasticsearch for production)
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-        'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
-    },
-}
-
-# Machina settings
-MACHINA_FORUM_NAME = 'DeadDevelopers Community'
-MACHINA_BASE_TEMPLATE_NAME = 'base.html'
-MACHINA_USER_DISPLAY_NAME_METHOD = 'get_full_name'
-
 # Cache (using Vercel KV if available, falling back to local memory)
 if os.getenv('KV_URL'):
     CACHES = {
@@ -214,24 +184,13 @@ if os.getenv('KV_URL'):
             'LOCATION': os.getenv('KV_URL'),
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
+            },
         },
-        'machina_attachments': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': os.getenv('KV_URL'),
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
-        }
     }
 else:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        },
-        'machina_attachments': {
-            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            'LOCATION': '/tmp/machina-cache',
         },
     }
 
