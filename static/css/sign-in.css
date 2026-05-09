@@ -57,6 +57,21 @@ html, body {
   letter-spacing: 0.01em;
 }
 
+.back-link {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+  transition: color 0.2s ease;
+  width: fit-content;
+}
+
+.back-link:hover {
+  color: #00ff00;
+}
+
 .signin-input {
   width: 100%;
   padding: 0.85rem 0.95rem;
@@ -91,7 +106,7 @@ html, body {
 }
 
 .forgot-password:hover {
-  color: #33ff33;
+  color: #00ff00c9;
   text-decoration: none;
 }
 
@@ -194,14 +209,78 @@ html, body {
 }
 
 .signup-link:hover {
-  color: #33ff33;
+  color: #00ff00c9;
   text-decoration: none;
 }
 
 .form-errors {
-  color: #ff4d4d;
-  font-size: 0.9rem;
   margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  background-color: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-left: 3px solid #ff4d4d;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  animation: errorFadeIn 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 4px rgba(255, 77, 77, 0.1);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-mono), 'Courier New', monospace;
+}
+
+.error-message::after {
+  content: 'ERROR';
+  position: absolute;
+  top: 0.35rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  color: rgba(255, 77, 77, 0.5);
+  letter-spacing: 0.05em;
+  font-weight: bold;
+}
+
+.error-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.error-message::before {
+  content: "!";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background-color: #ff4d4d;
+  color: #1a1a1a;
+  border-radius: 4px;
+  margin-right: 0.85rem;
+  font-weight: bold;
+  font-size: 0.8rem;
+  box-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
+  flex-shrink: 0;
+}
+
+@keyframes errorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 4px rgba(255, 77, 77, 0.1);
+  }
 }
 
 /* Mobile Section Display Logic - initially hidden */
@@ -265,7 +344,7 @@ html, body {
 
   /* Desktop social content styling */
   .social-content {
-    padding: 2.75rem;
+    padding: 5.75rem;
     background-color: #262626;
     border-radius: 0 14px 14px 0;
     border: 1px solid rgba(0, 255, 0, 0.15);
