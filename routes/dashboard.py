@@ -315,7 +315,7 @@ def delete(req, session, slug: str):
 @rt('/dashboard/ask')
 async def post(req, query: str, session):
     """AI assistant (OpenRouter-backed; see routes/ai.py)."""
-    user = AuthBridge.get_current_user(req, session)
+    user = await AuthBridge.aget_current_user(req, session)
     if not user:
         return RedirectResponse('/login', status_code=303)
 

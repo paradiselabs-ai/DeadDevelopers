@@ -160,9 +160,13 @@ AUTHENTICATION_BACKENDS = [
 
 # django-allauth settings
 SITE_ID = 1
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_LOGIN_METHODS = {'email'}  # Updated from deprecated ACCOUNT_AUTHENTICATION_METHOD
+# django-allauth signup field config — replaces the deprecated
+# ACCOUNT_EMAIL_REQUIRED + ACCOUNT_USERNAME_REQUIRED pair. Email is required
+# (and used as the login identifier per ACCOUNT_LOGIN_METHODS); password
+# entered twice. Username is captured by routes/auth.py's SignupForm and
+# attached to the Django user record manually.
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 LOGIN_REDIRECT_URL = '/dashboard'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'

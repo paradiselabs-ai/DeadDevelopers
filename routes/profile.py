@@ -725,48 +725,46 @@ def get(username: str, session, req):
 
 @rt('/profile/{username}/edit')
 async def post(username: str, session, req):
-    """Handle profile update form submission"""
-    # Get the current user
+    """Handle profile update form submission.
+
+    This handler is async because it awaits req.form() and avatar_file.read().
+    All sync ORM calls (lookup, save) go through sync_to_async to avoid
+    Django 6's SynchronousOnlyOperation in async contexts.
+    """
+    from asgiref.sync import sync_to_async
     from auth_bridge import AuthBridge
-    current_user = AuthBridge.get_current_user(req, session)
-    
-    # Check authentication
+
+    current_user = await AuthBridge.aget_current_user(req, session)
     if not current_user:
         return RedirectResponse('/login', status_code=303)
-    
-    # Check if user is editing their own profile
+
     if current_user.username != username:
         return RedirectResponse(f'/profile/{username}', status_code=303)
-    
-    # Get form data
+
     form_data = await req.form()
-    
+
     # Handle avatar upload
     avatar_file = form_data.get('avatar')
     if avatar_file and hasattr(avatar_file, 'filename') and avatar_file.filename:
-        # Validate file type
         allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-        import os
-        file_ext = os.path.splitext(avatar_file.filename)[1].lower()
-        
+        import os as _os
+        file_ext = _os.path.splitext(avatar_file.filename)[1].lower()
+
         if file_ext in allowed_extensions:
-            # Validate file size (max 5MB)
             avatar_content = await avatar_file.read()
             if len(avatar_content) <= 5 * 1024 * 1024:  # 5MB
-                # Save the file
                 from django.core.files.uploadedfile import SimpleUploadedFile
                 uploaded_file = SimpleUploadedFile(
                     name=f"{username}_avatar{file_ext}",
                     content=avatar_content,
-                    content_type=avatar_file.content_type
+                    content_type=avatar_file.content_type,
                 )
                 current_user.avatar = uploaded_file
             else:
                 session['flash_error'] = "Avatar file is too large (max 5MB)"
         else:
             session['flash_error'] = "Invalid file type. Please upload JPG, PNG, GIF, or WEBP"
-    
-    # Update user fields
+
     current_user.first_name = form_data.get('first_name', '')
     current_user.last_name = form_data.get('last_name', '')
     current_user.tagline = form_data.get('tagline', '')
@@ -781,10 +779,9 @@ async def post(username: str, session, req):
     current_user.is_public = 'is_public' in form_data
     current_user.show_email = 'show_email' in form_data
     current_user.theme_preference = form_data.get('theme_preference', 'dark')
-    
-    # Save to database
-    current_user.save()
-    
-    # Redirect back to profile with success message
+
+    # save() is sync ORM — wrap it for the async context
+    await sync_to_async(current_user.save)()
+
     session['flash_message'] = "Profile updated successfully!"
     return RedirectResponse(f'/profile/{username}', status_code=303)

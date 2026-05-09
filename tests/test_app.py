@@ -84,7 +84,12 @@ def test_signup_route_success(client, user_model):
     }
     response = client.post("/signup", data=data)
     assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
-    assert response.headers["location"] == "/dashboard", "Should redirect to dashboard"
+    # Signup hands off to the email-confirmation flow; the user lands at
+    # /dashboard only after they verify (or after auto-verification kicks
+    # in for the dev-mode fallback path on the subsequent login).
+    assert response.headers["location"] == "/accounts/confirm-email/", (
+        f"Expected redirect to /accounts/confirm-email/, got {response.headers['location']}"
+    )
 
     # Verify user was created
     user = user_model.objects.get(email=f"newuser_{unique_id}@example.com")

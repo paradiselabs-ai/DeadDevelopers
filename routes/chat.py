@@ -682,7 +682,7 @@ def get(req, session):
     )
 
 @rt('/chat/{room_slug}')
-def get(req, session, room_slug):
+def get(req, session, room_slug: str):
     """Chat room page"""
     user = AuthBridge.get_current_user(req, session)
     if not user:

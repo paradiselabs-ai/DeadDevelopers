@@ -27,7 +27,10 @@ from routes import ai as ai_module  # noqa: E402
 
 
 def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    # asyncio.get_event_loop() raises in Python 3.12+ when there's no
+    # current loop. asyncio.run() creates and tears down a fresh loop
+    # per call, which is what we want for unit tests.
+    return asyncio.run(coro)
 
 
 @pytest.fixture(autouse=True)

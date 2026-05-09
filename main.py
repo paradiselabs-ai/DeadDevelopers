@@ -2,7 +2,7 @@ from fasthtml.common import *
 from app import app, rt
 from utils.feed_helpers import generate_live_updates, generate_live_feed, create_scrolling_feed
 
-# Import routes
+# Import routes — every module here registers handlers via @rt at import time
 from routes.auth import *
 from routes.demo import *
 from routes.dashboard import *
@@ -13,6 +13,7 @@ from routes.about import *
 from routes.header import SiteHeader
 from routes.email_confirmation import *
 from routes.profile import *
+from routes.chat import *  # /chat, /chat/<slug>, /chat/create
 
 # Landing page route
 @rt('/')

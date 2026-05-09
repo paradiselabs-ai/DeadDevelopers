@@ -13,6 +13,7 @@ Env vars:
 - SITE_URL (optional, used in the HTTP-Referer header OpenRouter expects)
 """
 import os
+from asgiref.sync import sync_to_async
 from openai import AsyncOpenAI
 from django.core.cache import cache
 
@@ -85,13 +86,14 @@ async def get_ai_response(prompt: str, user_id: int) -> str:
         return f"Prompt too long ({len(prompt)} chars > {MAX_PROMPT_CHARS})."
 
     rate_key = f"ai_ratelimit_{user_id}"
-    used = cache.get(rate_key, 0)
+    # Cache backend may go through sync code — wrap to be safe in async context.
+    used = await sync_to_async(cache.get)(rate_key, 0)
     if used >= RATE_LIMIT_PER_HOUR:
         return (
             f"Rate limit reached ({RATE_LIMIT_PER_HOUR}/hour). "
             "Wait an hour or BYO key."
         )
-    cache.set(rate_key, used + 1, 3600)
+    await sync_to_async(cache.set)(rate_key, used + 1, 3600)
 
     try:
         msg = await client.chat.completions.create(

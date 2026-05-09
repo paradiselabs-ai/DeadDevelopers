@@ -124,14 +124,14 @@ def test_dashboard_authenticated_structure(authenticated_client):
     assert has_user_info, "Dashboard should display some form of user information"
 
 def test_new_project_unauthenticated(client):
-    """Test /dashboard/new-project redirects to login for unauthenticated users"""
-    response = client.get("/dashboard/new-project")
+    """Test /dashboard/projects/new redirects to login for unauthenticated users"""
+    response = client.get("/dashboard/projects/new")
     assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
     assert response.headers["location"] == "/login", "Should redirect to login"
 
 def test_new_project_form_structure(authenticated_client):
     """Test that the new project form has the correct structural elements."""
-    response = authenticated_client.get("/dashboard/new-project")
+    response = authenticated_client.get("/dashboard/projects/new")
     assert response.status_code == 200, f"New project form should render, got {response.status_code}"
     
     # Parse HTML content
@@ -166,22 +166,22 @@ def test_new_project_form_structure(authenticated_client):
     assert submit_button is not None, "Form should have a submit button"
 
 def test_create_project_unauthenticated(client):
-    """Test /dashboard/create-project redirects to login for unauthenticated users"""
+    """Test /dashboard/projects redirects to login for unauthenticated users"""
     data = {
         "name": "Test Project",
         "description": "A project created in tests"
     }
-    response = client.post("/dashboard/create-project", data=data)
+    response = client.post("/dashboard/projects", data=data)
     assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}"
     assert response.headers["location"] == "/login", "Should redirect to login"
 
 def test_create_project_authenticated(authenticated_client):
-    """Test /dashboard/create-project creates a project and redirects to dashboard."""
+    """Test /dashboard/projects creates a project and redirects to dashboard."""
     data = {
         "name": "Test Project",
         "description": "A project created in tests"
     }
-    response = authenticated_client.post("/dashboard/create-project", data=data)
+    response = authenticated_client.post("/dashboard/projects", data=data)
     
     # The app might either redirect or return a 200 with updated content - accept both
     assert response.status_code in [200, 302, 303], f"Expected success or redirect, got {response.status_code}"

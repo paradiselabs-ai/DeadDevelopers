@@ -462,24 +462,22 @@ def post(email: str, password: str, req, session):
 
     # Use AuthBridge to log in user in both FastHTML and Django sessions
     AuthBridge.login_user(req, session, user)
-    
+
     # Clear rate limit on successful login
     cache.delete(rate_limit_key)
 
     # Add welcome back toast
     add_toast(session, f"Welcome back, {user.get_display_name()}!", "success")
 
-    # Redirect to dashboard
-    return RedirectResponse('/dashboard', status_code=303)
+    # Redirect to dashboard, stamping the Django sessionid cookie so DRF
+    # /api/* endpoints recognise the user too.
+    response = RedirectResponse('/dashboard', status_code=303)
+    return AuthBridge.apply_session_cookie(response, req)
 
 @rt('/logout')
 def get(req, session):
     """Log user out of both Django and FastHTML sessions"""
-    # Use AuthBridge to log out from both sessions
     AuthBridge.logout_user(req, session)
-    
-    # Add logout toast
     add_toast(session, "You've been logged out successfully.", "info")
-    
-    # Redirect to home page with explicit 303 status code
-    return RedirectResponse('/', status_code=303)
+    response = RedirectResponse('/', status_code=303)
+    return AuthBridge.apply_session_cookie(response, req)
